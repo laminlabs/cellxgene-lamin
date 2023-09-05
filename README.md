@@ -1,5 +1,5 @@
-# tiledb-lamin-scrna: Manage scRNA data using TileDB and Lamin
+# TileDB-Lamin-scRNA: Manage scRNA data using TileDB and Lamin
 
-## Contributing
-
-Please run `pre-commit install` and `gitmoji -i` on the CLI before starting to work on this repository!
+- [CELLxGENE Census](https://chanzuckerberg.github.io/cellxgene-census/)
+- [TileDB-SOMA](https://github.com/single-cell-data/TileDB-SOMA)
+- [TileDB](https://github.com/TileDB-Inc/TileDB-Py)
