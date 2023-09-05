@@ -1,0 +1,5 @@
+project_name: tiledb-lamin-scrna
+description: Manage scRNA data using TileDB and Lamin
+project_slug: tiledb-lamin-scrna
+repository_name: tiledb-lamin-scrna
+package_name: tiledb_lamin_scrna

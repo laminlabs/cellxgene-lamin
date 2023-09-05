@@ -1,0 +1,32 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "tiledb_lamin_scrna"
+authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
+readme = "README.md"
+dynamic = ["version", "description"]
+dependencies = [
+    "lamindb",
+]
+
+[project.urls]
+Home = "https://github.com/laminlabs/tiledb-lamin-scrna"
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit",
+    "nox",
+    "pytest>=6.0",
+    "pytest-cov",
+    "nbproject_test",
+]
+
+[tool.black]
+preview = true
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
