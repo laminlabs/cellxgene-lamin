@@ -1,8 +1,8 @@
-"""Manage scRNA data using TileDB and Lamin.
+"""Manage cellxgene-census metadata using Lamin.
 
 Import the package::
 
-   import tiledb_lamin_scrna
+   import cellxgene_census_lamin
 
 """
 
