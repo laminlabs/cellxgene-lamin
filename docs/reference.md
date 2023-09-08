@@ -1,5 +1,5 @@
 # Reference
 
 ```{eval-rst}
-.. automodule:: tiledb_lamin_scrna
+.. automodule:: cellxgene_census_lamin
 ```
