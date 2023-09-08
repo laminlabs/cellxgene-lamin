@@ -3,6 +3,6 @@
 ```{toctree}
 :maxdepth: 1
 
-prepare-registries
+census-registries
 query-census
 ```
