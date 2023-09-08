@@ -106,3 +106,4 @@ docs/tiledb_lamin_scrna.*
 lamin_sphinx
 docs/conf.py
 _docs_tmp*
+test-census/
