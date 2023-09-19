@@ -10,6 +10,7 @@ repos:
           )
       - id: check-yaml
       - id: check-added-large-files
+        args: ["--maxkb=2000"]
   - repo: https://github.com/psf/black
     rev: 22.6.0
     hooks:
@@ -40,7 +41,7 @@ repos:
         exclude: |
           (?x)(
               docs/examples/|
-              docs/notes/
+              docs/notebooks/
           )
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.1.9
