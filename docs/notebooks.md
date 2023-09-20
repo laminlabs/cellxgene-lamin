@@ -21,6 +21,7 @@ Integration tests are {doc}`/guide`.
 
 ```{toctree}
 :maxdepth: 1
+:hidden:
 
 notebooks/datasets
 notebooks/human-meta
