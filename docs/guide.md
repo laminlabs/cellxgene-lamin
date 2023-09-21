@@ -1,11 +1,19 @@
 # Guide
 
-The following notebooks are integration tests.
+````{note}
 
-See full versioned documents in [Notebooks](https://cellxgene-census-lamin-c192.netlify.app/notebooks).
+The {doc}`census-registries` notebook can be run using the [public instance](https://lamin.ai/laminlabs/cellxgene-census):
 
-- {doc}`census-registries`
-- {doc}`query-census`
+```bash
+
+$ lamin load cellxgene-census
+
+````
+
+If you are interested in how the instance is created:
+
+- see {doc}`query-census`
+- or [full versioned docs](/notebooks)
 
 ```{toctree}
 :maxdepth: 1
