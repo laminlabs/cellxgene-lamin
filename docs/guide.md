@@ -13,7 +13,7 @@ $ lamin load cellxgene-census
 If you are interested in how the instance is created:
 
 - see {doc}`query-census`
-- or [full versioned docs](/notebooks)
+- or [full versioned docs](https://cellxgene-census-lamin-c192.netlify.app/notebooks)
 
 ```{toctree}
 :maxdepth: 1
