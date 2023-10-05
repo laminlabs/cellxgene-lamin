@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+📝 Update linking file to feature sets | [9](https://github.com/laminlabs/cellxgene-census-lamin/pull/9) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-05 |
 📝 Updated guide to not register Dataset | [8](https://github.com/laminlabs/cellxgene-census-lamin/pull/8) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-04 |
 🎨 Use abbr for names that are not matching | [7](https://github.com/laminlabs/cellxgene-census-lamin/pull/7) | [sunnyosun](https://github.com/sunnyosun) | 2023-09-25 |
 📝 Updated guides | [6](https://github.com/laminlabs/cellxgene-census-lamin/pull/6) | [sunnyosun](https://github.com/sunnyosun) | 2023-09-20 |
