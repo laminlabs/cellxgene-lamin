@@ -15,15 +15,17 @@ The following notebooks are versioned documents of creating the instance.
 
 Integration tests are {doc}`/guide`.
 
-- {doc}`/notebooks/datasets`
-- {doc}`/notebooks/human-meta`
-- {doc}`/notebooks/mouse-meta`
+- {doc}`/notebooks/files`
+- {doc}`/notebooks/meta-human`
+- {doc}`/notebooks/meta-mouse`
+- {doc}`/notebooks/files-meta`
 
 ```{toctree}
 :maxdepth: 1
 :hidden:
 
-notebooks/datasets
-notebooks/human-meta
-notebooks/mouse-meta
+notebooks/files
+notebooks/meta-human
+notebooks/meta-mouse
+notebooks/files-meta
 ```
