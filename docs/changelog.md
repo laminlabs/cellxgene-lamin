@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Run the 3rd nb directly from public instance | [11](https://github.com/laminlabs/cellxgene-census-lamin/pull/11) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-20 |
 📝 Add a notebook for querying lamin instance | [10](https://github.com/laminlabs/cellxgene-census-lamin/pull/10) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-20 |
 📝 Update linking file to feature sets | [9](https://github.com/laminlabs/cellxgene-census-lamin/pull/9) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-05 |
 📝 Updated guide to not register Dataset | [8](https://github.com/laminlabs/cellxgene-census-lamin/pull/8) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-04 |
