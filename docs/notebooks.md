@@ -9,11 +9,7 @@ Explore the instance: [lamin.ai/laminlabs/cellxgene-census](https://lamin.ai/lam
 
 ## `laminlabs/cellxgene-census`
 
-An SQLite instance containing metadata and datasets of cellxgene-census.
-
 The following notebooks are versioned documents of creating the instance.
-
-Integration tests are {doc}`/guide`.
 
 - {doc}`/notebooks/files`
 - {doc}`/notebooks/meta-human`
