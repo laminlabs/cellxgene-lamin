@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+📝 Prettify | [15](https://github.com/laminlabs/cellxgene-census-lamin/pull/15) | [falexwolf](https://github.com/falexwolf) | 2023-10-27 |
 🎨 Using local instance to store queried data | [14](https://github.com/laminlabs/cellxgene-census-lamin/pull/14) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-25 |
 💄 Polish the guides | [13](https://github.com/laminlabs/cellxgene-census-lamin/pull/13) | [falexwolf](https://github.com/falexwolf) | 2023-10-24 |
 🎨 Track the version of the overall dataset | [12](https://github.com/laminlabs/cellxgene-census-lamin/pull/12) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-24 |
