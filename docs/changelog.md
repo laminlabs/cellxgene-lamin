@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+📝 Section on concat | [18](https://github.com/laminlabs/cellxgene-census-lamin/pull/18) | [falexwolf](https://github.com/falexwolf) | 2023-11-04 |
 📝 Load the backed slice into memory & prettify | [17](https://github.com/laminlabs/cellxgene-census-lamin/pull/17) | [Koncopd](https://github.com/Koncopd) | 2023-11-04 |
 📝 Prettify | [15](https://github.com/laminlabs/cellxgene-census-lamin/pull/15) | [falexwolf](https://github.com/falexwolf) | 2023-10-27 |
 🎨 Using local instance to store queried data | [14](https://github.com/laminlabs/cellxgene-census-lamin/pull/14) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-25 |
