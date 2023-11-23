@@ -11,6 +11,7 @@ Explore the instance: [lamin.ai/laminlabs/cellxgene-census](https://lamin.ai/lam
 
 The following notebooks are versioned documents of creating the instance.
 
+- {doc}`/notebooks/census-release-2023-11`
 - {doc}`/notebooks/files`
 - {doc}`/notebooks/meta-human`
 - {doc}`/notebooks/meta-mouse`
@@ -20,6 +21,7 @@ The following notebooks are versioned documents of creating the instance.
 :maxdepth: 1
 :hidden:
 
+census-release-2023-11
 notebooks/files
 notebooks/meta-human
 notebooks/meta-mouse
