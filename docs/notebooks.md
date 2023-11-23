@@ -21,7 +21,7 @@ The following notebooks are versioned documents of creating the instance.
 :maxdepth: 1
 :hidden:
 
-census-release-2023-11
+notebooks/census-release-2023-11
 notebooks/files
 notebooks/meta-human
 notebooks/meta-mouse
