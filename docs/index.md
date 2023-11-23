@@ -7,7 +7,7 @@
 :maxdepth: 1
 :hidden:
 
-cellxgene-census
+cellxgene
 notebooks
 changelog
 ```

@@ -1,5 +1,5 @@
-project_name: cellxgene-census-lamin
-description: Manage scRNA data using TileDB and Lamin
-project_slug: cellxgene-census-lamin
-repository_name: cellxgene-census-lamin
-package_name: cellxgene_census_lamin
+project_name: cellxgene-lamin
+description: Manage cellxgene metadata using LaminDB
+project_slug: cellxgene-lamin
+repository_name: cellxgene-lamin
+package_name: cellxgene_lamin

@@ -1,8 +1,8 @@
-"""Manage cellxgene-census metadata using Lamin.
+"""Manage cellxgene metadata using LaminDB.
 
 Import the package::
 
-   import cellxgene_census_lamin
+   import cellxgene_lamin
 
 """
 

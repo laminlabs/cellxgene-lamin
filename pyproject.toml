@@ -3,7 +3,7 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "cellxgene_census_lamin"
+name = "cellxgene_lamin"
 authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.urls]
-Home = "https://github.com/laminlabs/cellxgene-census-lamin"
+Home = "https://github.com/laminlabs/cellxgene-lamin"
 
 [project.optional-dependencies]
 dev = [
