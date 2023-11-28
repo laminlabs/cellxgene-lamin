@@ -106,4 +106,4 @@ docs/cellxgene_census_lamin.*
 lamin_sphinx
 docs/conf.py
 _docs_tmp*
-test-census/
+test-cellxgene/
