@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔥 Remove registries from the main docs | [24](https://github.com/laminlabs/cellxgene-lamin/pull/24) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-29 |
 ♻️ Register cellxgene metadata via REST API | [23](https://github.com/laminlabs/cellxgene-lamin/pull/23) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-29 |
 🚚 Rename to cellxgene | [22](https://github.com/laminlabs/cellxgene-lamin/pull/22) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-23 |
 🍱 Register files from the 2023-11 release | [21](https://github.com/laminlabs/cellxgene-census-lamin/pull/21) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-23 |
