@@ -12,11 +12,6 @@ Explore the instance: [lamin.ai/laminlabs/cellxgene](https://lamin.ai/laminlabs/
 The following notebooks are versioned documents of creating the instance.
 
 - {doc}`/notebooks/census-release-2023-07-25`
-- {doc}`/notebooks/census-release-2023-11`
-- {doc}`/notebooks/files`
-- {doc}`/notebooks/meta-human`
-- {doc}`/notebooks/meta-mouse`
-- {doc}`/notebooks/files-meta`
 
 ```{toctree}
 :maxdepth: 1
