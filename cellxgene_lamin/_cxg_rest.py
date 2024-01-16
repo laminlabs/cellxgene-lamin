@@ -1,4 +1,4 @@
-import requests
+import requests  # type: ignore
 
 
 def get_datasets_from_cxg():
@@ -10,6 +10,7 @@ def get_datasets_from_cxg():
     res.raise_for_status()
     res_content = res.json()
     return res_content
+
 
 def get_collections_from_cxg():
     api_url_base = "https://api.cellxgene.cziscience.com"

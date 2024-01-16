@@ -1,6 +1,4 @@
 import lamindb as ln
-from typing import Optional
-from lnschema_bionty.models import Registry
 from lamindb.dev._feature_manager import get_accessor_by_orm
 
 OBS_FEATURES = {
@@ -31,14 +29,14 @@ for name in OBS_FEATURES.keys():
     FEATURE_TO_ACCESSOR[name] = (accessor, orm)
 
 
-def register_feature_set(artifacts, slot:str):
+def register_feature_set(artifacts, slot: str):
     import lamindb as ln
 
     if slot == "obs":
         features = OBS_FEATURES
     elif slot == "ext":
         features = EXT_FEATURES
-        
+
     feature_set = ln.FeatureSet.filter(name=f"{slot} features").one_or_none()
     if feature_set is None:
         features_records = []
@@ -48,8 +46,6 @@ def register_feature_set(artifacts, slot:str):
         ln.save(features_records)
         feature_set = ln.FeatureSet(features=features_records, name=f"{slot} metadata")
         feature_set.save()
-    
+
     feature_set.artifacts.add(*artifacts, through_defaults={"slot": slot})
     return feature_set
-
-    

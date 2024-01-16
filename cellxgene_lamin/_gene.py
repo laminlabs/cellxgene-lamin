@@ -1,7 +1,10 @@
+import pandas as pd
+
+
 def register_genes():
     import lamindb as ln
     import lnschema_bionty as lb
-    
+
     organisms = lb.Organism.lookup(field=lb.Organism.scientific_name)
     genes_files = {
         "homo_sapiens": "https://github.com/chanzuckerberg/single-cell-curation/raw/main/cellxgene_schema_cli/cellxgene_schema/ontology_files/genes_homo_sapiens.csv.gz",
@@ -33,8 +36,9 @@ def register_genes():
                 )
             )
         ln.save(new_records)
-    
+
         genes_feature_set = ln.FeatureSet(
-            features=gene_records + new_records, name=f"all {organism_record.name} genes"
+            features=gene_records + new_records,
+            name=f"all {organism_record.name} genes",
         )
         genes_feature_set.save()

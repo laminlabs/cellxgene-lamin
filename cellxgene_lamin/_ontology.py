@@ -1,6 +1,8 @@
 from typing import Optional
-from lnschema_bionty.models import Registry, PublicSource
-from ._features import OBS_FEATURES, FEATURE_TO_ACCESSOR
+
+from lnschema_bionty.models import PublicSource, Registry
+
+from ._features import FEATURE_TO_ACCESSOR, OBS_FEATURES
 
 
 def create_ontology_record_from_source(
@@ -36,9 +38,9 @@ def register_ontology_ids(cxg_datasets):
         for i in cxg_datasets:
             if name in i:
                 allids.update([(j["label"], j["ontology_term_id"]) for j in i[name]])
-    
+
         ontology_ids[name] = allids
-    
+
     public_source_ds_mouse = lb.PublicSource.filter(
         entity="DevelopmentalStage", organism="mouse"
     ).one()
@@ -91,11 +93,11 @@ def register_ontology_ids(cxg_datasets):
                     for term_id in inspect_result.non_validated
                     if term_id.startswith("PATO:")
                 ]
-    
+
             if len(records) > 0:
                 print(f"registered {len(records)} records: {records}")
                 ln.save(records)
     ln.settings.upon_create_search_names = upon_create_search_names
-    
+
     # clean up the 2 "unknowns" in DevelopmentalStage
     lb.DevelopmentalStage.filter(name="unknown").exclude(ontology_id="unknown").delete()

@@ -8,7 +8,8 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    "cellxgene-census"
+    "cellxgene-census",
+    "requests",
 ]
 
 [project.urls]
