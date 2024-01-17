@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Register 2023-12-15 LTS | [30](https://github.com/laminlabs/cellxgene-lamin/pull/30) | [sunnyosun](https://github.com/sunnyosun) | 2024-01-17 |
 🐛 Fix from_public | [29](https://github.com/laminlabs/cellxgene-lamin/pull/29) | [sunnyosun](https://github.com/sunnyosun) | 2024-01-10 |
 🎨 Filter for collections | [28](https://github.com/laminlabs/cellxgene-lamin/pull/28) | [sunnyosun](https://github.com/sunnyosun) | 2024-01-08 |
 🚚 Rename `Dataset` to `Collection` | [27](https://github.com/laminlabs/cellxgene-lamin/pull/27) | [falexwolf](https://github.com/falexwolf) | 2024-01-02 |
