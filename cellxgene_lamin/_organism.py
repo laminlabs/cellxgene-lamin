@@ -23,8 +23,7 @@ def annotate_organisms(artifacts, cxg_datasets):
     import lamindb as ln
     import lnschema_bionty as lb
 
-    ext_feature_set = ln.FeatureSet.filter(name="external metadata").one()
-    ext_features = ext_feature_set.members.lookup()
+    feature_organism = ln.Feature.filter(name="organism").one()
 
     for cxg_dataset in cxg_datasets:
         # get registered file record based on dataset_id
@@ -39,4 +38,4 @@ def annotate_organisms(artifacts, cxg_datasets):
         organism_records = lb.Organism.filter(
             ontology_id__in=organism_ontology_ids
         ).list()
-        artifact.labels.add(organism_records, feature=ext_features.organism)
+        artifact.labels.add(organism_records, feature=feature_organism)
