@@ -1,16 +1,16 @@
 def register_organisms(cxg_datasets):
+    import bionty as bt
     import lamindb as ln
-    import lnschema_bionty as lb
 
     # register all organisms
-    ncbitaxon_source = lb.BiontySource.filter(source="ncbitaxon").one()
+    ncbitaxon_source = bt.BiontySource.filter(source="ncbitaxon").one()
 
     organisms_meta = set()
     for cxg_dataset in cxg_datasets:
         organisms_meta.update({i["ontology_term_id"] for i in cxg_dataset["organism"]})
 
-    organisms_records = lb.Organism.from_values(
-        organisms_meta, field=lb.Organism.ontology_id, bionty_source=ncbitaxon_source
+    organisms_records = bt.Organism.from_values(
+        organisms_meta, field=bt.Organism.ontology_id, bionty_source=ncbitaxon_source
     )
     # rename house mouse to mouse
     for r in organisms_records:
@@ -20,8 +20,8 @@ def register_organisms(cxg_datasets):
 
 
 def annotate_organisms(artifacts, cxg_datasets):
+    import bionty as bt
     import lamindb as ln
-    import lnschema_bionty as lb
 
     feature_organism = ln.Feature.filter(name="organism").one()
 
@@ -35,7 +35,7 @@ def annotate_organisms(artifacts, cxg_datasets):
 
         # annotate artifacts with organisms
         organism_ontology_ids = [i["ontology_term_id"] for i in cxg_dataset["organism"]]
-        organism_records = lb.Organism.filter(
+        organism_records = bt.Organism.filter(
             ontology_id__in=organism_ontology_ids
         ).list()
         artifact.labels.add(organism_records, feature=feature_organism)
