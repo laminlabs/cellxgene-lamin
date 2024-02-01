@@ -27,8 +27,8 @@ def create_ontology_record_from_source(
 
 
 def register_ontology_ids(cxg_datasets):
+    import bionty as bt
     import lamindb as ln
-    import lnschema_bionty as lb
 
     ontology_ids = {}
     for name in OBS_FEATURES.keys():
@@ -41,10 +41,10 @@ def register_ontology_ids(cxg_datasets):
 
         ontology_ids[name] = allids
 
-    public_source_ds_mouse = lb.PublicSource.filter(
+    public_source_ds_mouse = bt.PublicSource.filter(
         entity="DevelopmentalStage", organism="mouse"
     ).one()
-    public_source_pato = lb.PublicSource.filter(source="pato").one()
+    public_source_pato = bt.PublicSource.filter(source="pato").one()
 
     upon_create_search_names = ln.settings.upon_create_search_names
     ln.settings.upon_create_search_names = False
@@ -66,7 +66,7 @@ def register_ontology_ids(cxg_datasets):
                 )
                 records += [
                     create_ontology_record_from_source(
-                        ontology_id=term_id, from_orm=lb.Tissue, target_orm=orm
+                        ontology_id=term_id, from_orm=bt.Tissue, target_orm=orm
                     )
                     for term_id in inspect_result.non_validated
                     if term_id.startswith("UBERON:")
@@ -86,7 +86,7 @@ def register_ontology_ids(cxg_datasets):
                 records += [
                     create_ontology_record_from_source(
                         ontology_id=term_id,
-                        from_orm=lb.Phenotype,
+                        from_orm=bt.Phenotype,
                         target_orm=orm,
                         public_source=public_source_pato,
                     )
@@ -100,4 +100,4 @@ def register_ontology_ids(cxg_datasets):
     ln.settings.upon_create_search_names = upon_create_search_names
 
     # clean up the 2 "unknowns" in DevelopmentalStage
-    lb.DevelopmentalStage.filter(name="unknown").exclude(ontology_id="unknown").delete()
+    bt.DevelopmentalStage.filter(name="unknown").exclude(ontology_id="unknown").delete()
