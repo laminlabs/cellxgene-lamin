@@ -67,7 +67,7 @@ jobs:
           status: FAILURE
           color: danger
       - uses: nwtgck/actions-netlify@v1.2
-        if: matrix.python-version == '3.9'
+        if: matrix.python-version == '3.10'
         with:
           publish-dir: "_build/html"
           production-deploy: ${{ github.event_name == 'push' }}
