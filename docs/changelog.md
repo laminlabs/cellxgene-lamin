@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Import bionty instead of lb | [32](https://github.com/laminlabs/cellxgene-lamin/pull/32) | [sunnyosun](https://github.com/sunnyosun) | 2024-02-01 |
 🎨 Properly register versions of artifacts and collections | [31](https://github.com/laminlabs/cellxgene-lamin/pull/31) | [sunnyosun](https://github.com/sunnyosun) | 2024-01-29 |
 ✨ Register 2023-12-15 LTS | [30](https://github.com/laminlabs/cellxgene-lamin/pull/30) | [sunnyosun](https://github.com/sunnyosun) | 2024-01-17 |
 🐛 Fix from_public | [29](https://github.com/laminlabs/cellxgene-lamin/pull/29) | [sunnyosun](https://github.com/sunnyosun) | 2024-01-10 |
