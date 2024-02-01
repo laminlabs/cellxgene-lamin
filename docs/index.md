@@ -8,7 +8,6 @@
 :hidden:
 
 cellxgene
-cellxgene-registries
 notebooks
 changelog
 ```
