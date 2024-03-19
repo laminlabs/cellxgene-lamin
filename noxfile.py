@@ -25,7 +25,7 @@ def install(session: nox.Session, group: str) -> None:
         extra = ",jupyter,aws"
         session.run(*"pip install cellxgene-census".split())
     elif group == "validator":
-        extra = ",jupyter,aws"
+        extra = ",jupyter,aws,zarr"
         session.run(*"pip install cellxgene-schema".split())
     session.run(*"pip install .[dev]".split())
     session.run(
