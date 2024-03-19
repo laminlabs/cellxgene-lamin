@@ -1,3 +1,9 @@
+from typing import TYPE_CHECKING, Iterable
+
+from lamindb import Artifact
+from lnschema_core import Registry
+
+
 def register_organisms(cxg_datasets):
     import bionty as bt
     import lamindb as ln
@@ -12,14 +18,14 @@ def register_organisms(cxg_datasets):
     organisms_records = bt.Organism.from_values(
         organisms_meta, field=bt.Organism.ontology_id, bionty_source=ncbitaxon_source
     )
-    # rename house mouse to mouse
+    # rename 'house mouse' to 'mouse'
     for r in organisms_records:
         if r.name == "house mouse":
             r.name = "mouse"
     ln.save(organisms_records, parents=False)
 
 
-def annotate_organisms(artifacts, cxg_datasets):
+def annotate_organisms(artifacts: Artifact, cxg_datasets: Iterable):
     import bionty as bt
     import lamindb as ln
 

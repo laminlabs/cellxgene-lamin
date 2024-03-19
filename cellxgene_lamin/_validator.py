@@ -7,6 +7,7 @@ import bionty as bt
 from lamin_utils import logger
 from lamindb.validation import AnnDataValidator
 from lamindb.validation._validate import validate_categories_in_df
+from lnschema_bionty import PublicSource
 from lnschema_core.types import FieldAttr
 
 from ._curate import convert_name_to_ontology_id
@@ -75,7 +76,22 @@ class Validator(AnnDataValidator):
         # TODO: deal with organism more consistently as other fields
         self._kwargs = {k: v for k, v in kwargs.items() if k == "organism"}
         self._schema_version = "5.1.0"
-        self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.1.0/schema.m"
+        self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.1.0/schema.md"
+        self._pinned_ontologies: Dict[str, str] = {
+            "cl": "2024-01-04",
+            "efo": "3.62.0",
+            "hancestro": "3.0",
+            "hsapdv": "2020-03-10",
+            "mmusdv": "2020-03-10",
+            "mondo": "2024-01-03",
+            "ncbitaxon": "2023-06-20",
+            "pato": "2023-05-18",
+            "uberon": "2024-01-18",
+        }
+
+    @property
+    def pinned_ontologies(self) -> Dict[str, str]:
+        return self._pinned_ontologies
 
     @property
     def adata_curated(self) -> ad.AnnData:

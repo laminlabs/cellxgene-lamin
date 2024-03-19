@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Iterable, Optional
 
 from lnschema_bionty.models import PublicSource, Registry
 
@@ -26,7 +26,7 @@ def create_ontology_record_from_source(
         pass
 
 
-def register_ontology_ids(cxg_datasets):
+def register_ontology_ids(cxg_datasets: Iterable):
     import bionty as bt
     import lamindb as ln
 
@@ -48,6 +48,7 @@ def register_ontology_ids(cxg_datasets):
 
     upon_create_search_names = ln.settings.upon_create_search_names
     ln.settings.upon_create_search_names = False
+
     # register all ontology ids
     for name, terms in ontology_ids.items():
         print(f"registering {name}")
