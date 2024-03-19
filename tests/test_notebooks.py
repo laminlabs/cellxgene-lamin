@@ -11,12 +11,12 @@ DOCS = Path(__file__).parents[1] / "docs/"
 
 
 def test_census():
-    for filename in GROUPS["by_datatype"]:
+    for filename in GROUPS["census"]:
         print(filename)
         test.execute_notebooks(DOCS / filename, write=True)
 
 
 def test_validator():
-    for filename in GROUPS["by_registry"]:
+    for filename in GROUPS["validator"]:
         print(filename)
         test.execute_notebooks(DOCS / filename, write=True)
