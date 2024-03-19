@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Moved cellxgene-lamin-validator here | [36](https://github.com/laminlabs/cellxgene-lamin/pull/36) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-19 |
 💚 Fix CI | [34](https://github.com/laminlabs/cellxgene-lamin/pull/34) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-01 |
 👷 Use 3.10 for tests | [33](https://github.com/laminlabs/cellxgene-lamin/pull/33) | [sunnyosun](https://github.com/sunnyosun) | 2024-02-01 |
 🎨 Import bionty instead of lb | [32](https://github.com/laminlabs/cellxgene-lamin/pull/32) | [sunnyosun](https://github.com/sunnyosun) | 2024-02-01 |
