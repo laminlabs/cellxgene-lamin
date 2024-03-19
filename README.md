@@ -1,3 +1,5 @@
+[![pypi](https://img.shields.io/pypi/v/cellxgene-lamin?color=blue&label=pypi%20package)](https://pypi.org/project/cellxgene-lamin)
+
 # cellxgene-lamin: Manage cellxgene metadata using Lamin
 
 Try it out with the public instance `laminlabs/cellxgene`:
