@@ -1,4 +1,7 @@
-def register_ulabels(cxg_datasets, feature_name: str):
+from typing import Iterable
+
+
+def register_ulabels(cxg_datasets: Iterable, feature_name: str):
     import lamindb as ln
 
     if feature_name in {"donor_id", "suspension_type"}:
