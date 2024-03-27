@@ -70,7 +70,6 @@ class Validator(AnnDataValidator):
             obs_fields=_restrict_obs_fields(adata, obs_fields),
             using=using,
             verbosity=verbosity,
-            **kwargs,
         )
         self._schema_version = "5.1.0"
         self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.1.0/schema.md"
