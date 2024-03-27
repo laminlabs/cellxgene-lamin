@@ -107,6 +107,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install laminci
+          sudo apt-get -y install graphviz
 
       - run: nox -s "install(group='docs')"
       - uses: actions/download-artifact@v2
