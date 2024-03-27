@@ -29,7 +29,13 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"uv pip install --system cellxgene-schema".split())
         session.run(*"uv pip install --system anndata==0.9.0".split())
     session.run(*"uv pip install --system .[dev]".split())
-    session.run(*f"uv pip install --system lamindb[bionty{extra}]")
+    session.run(
+        "uv",
+        "pip",
+        "install",
+        "--system",
+        f"lamindb[bionty{extra}]",
+    )
 
 
 @nox.session
