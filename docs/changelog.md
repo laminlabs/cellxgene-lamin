@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+Fix census notebook execution not being shown | [41](https://github.com/laminlabs/cellxgene-lamin/pull/41) | [Zethson](https://github.com/Zethson) | 2024-03-27 |
 Fix notebook execution rendering | [39](https://github.com/laminlabs/cellxgene-lamin/pull/39) | [Zethson](https://github.com/Zethson) | 2024-03-27 |
 Add 5.1.0 pinned ontologies & ruff | [37](https://github.com/laminlabs/cellxgene-lamin/pull/37) | [Zethson](https://github.com/Zethson) | 2024-03-19 |
 ✨ Moved cellxgene-lamin-validator here | [36](https://github.com/laminlabs/cellxgene-lamin/pull/36) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-19 | 0.1.0
