@@ -70,6 +70,7 @@ class Validator(AnnDataValidator):
             obs_fields=_restrict_obs_fields(adata, obs_fields),
             using=using,
             verbosity=verbosity,
+            **kwargs,
         )
         # TODO: deal with organism more consistently as other fields
         self._kwargs = {k: v for k, v in kwargs.items() if k == "organism"}
