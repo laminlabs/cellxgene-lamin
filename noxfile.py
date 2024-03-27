@@ -30,11 +30,9 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"uv pip install --system anndata==0.9.0".split())
     session.run(*"uv pip install --system .[dev]".split())
     session.run(
-        "uv",
         "pip",
         "install",
-        "--system",
-        f"lamindb[bionty{extra}]",
+        f"lamindb[bionty{extra}] @ git+https://github.com/laminlabs/lamindb@main",
     )
 
 
