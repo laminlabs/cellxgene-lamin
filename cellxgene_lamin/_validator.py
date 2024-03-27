@@ -64,13 +64,14 @@ class Validator(AnnDataValidator):
         **kwargs,
     ):
         add_defaults_to_obs_fields(adata, **kwargs)
+        organism = kwargs.get("organism", None)
         super().__init__(
+            organism,
             adata=adata,
             var_field=var_field,
             obs_fields=_restrict_obs_fields(adata, obs_fields),
             using=using,
             verbosity=verbosity,
-            **kwargs,
         )
         # TODO: deal with organism more consistently as other fields
         self._kwargs = {k: v for k, v in kwargs.items() if k == "organism"}
