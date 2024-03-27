@@ -51,6 +51,15 @@ def build(session, group):
 @nox.session
 def docs(session):
     login_testuser1(session)
+    extra = ",jupyter,aws,zarr"
+    session.run(*"uv pip install --system cellxgene-schema".split())
+    session.run(*"uv pip install --system anndata==0.9.0".split())
+    session.run(*"uv pip install --system .[dev]".split())
+    session.run(
+        "pip",
+        "install",
+        f"lamindb[bionty{extra}] @ git+https://github.com/laminlabs/lamindb@main",
+    )
     session.run(*"lamin init --storage ./docsbuild --schema bionty".split())
     build_docs(session, strict=True)
     upload_docs_artifact(aws=True)
