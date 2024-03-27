@@ -49,10 +49,15 @@ def build(session, group):
 
 
 @nox.session
-def docs(session):
+@nox.parametrize(
+    "group",
+    ["census", "validator"],
+)
+def docs(session, group):
     login_testuser1(session)
     # TODO This is currently a hack because else the executed notebooks are not rendered!
     extra = ",jupyter,aws,zarr"
+    session.run(*"uv pip install --system cellxgene-census".split())
     session.run(*"uv pip install --system cellxgene-schema".split())
     session.run(*"uv pip install --system anndata==0.9.0".split())
     session.run(*"uv pip install --system .[dev]".split())
@@ -61,7 +66,7 @@ def docs(session):
         "install",
         f"lamindb[bionty{extra}] @ git+https://github.com/laminlabs/lamindb@main",
     )
-    session.run(*"pytest -s ./tests/test_notebooks.py::test_validator".split())
+    session.run(*f"pytest -s ./tests/test_notebooks.py::test_{group}".split())
     session.run(*"lamin init --storage ./docsbuild --schema bionty".split())
     build_docs(session, strict=True)
     upload_docs_artifact(aws=True)
