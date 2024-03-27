@@ -4,9 +4,10 @@ from laminci.nox import build_docs, login_testuser1, run_pre_commit
 
 nox.options.default_venv_backend = "none"
 
-GROUPS = {}
-GROUPS["census"] = ["query-census.ipynb"]
-GROUPS["validator"] = ["cellxgene.ipynb", "cellxgene-lamin-validator.ipynb"]
+GROUPS = {
+    "census": ["query-census.ipynb"],
+    "validator": ["cellxgene.ipynb", "cellxgene-lamin-validator.ipynb"],
+}
 
 
 @nox.session
@@ -51,5 +52,5 @@ def build(session, group):
 def docs(session):
     login_testuser1(session)
     session.run(*"lamin init --storage ./docsbuild --schema bionty".split())
-    build_docs(session, strict=False)
+    build_docs(session, strict=True)
     upload_docs_artifact(aws=True)
