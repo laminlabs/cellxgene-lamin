@@ -51,6 +51,7 @@ def build(session, group):
 @nox.session
 def docs(session):
     login_testuser1(session)
+    # TODO This is currently a hack because else the executed notebooks are not rendered!
     extra = ",jupyter,aws,zarr"
     session.run(*"uv pip install --system cellxgene-schema".split())
     session.run(*"uv pip install --system anndata==0.9.0".split())
