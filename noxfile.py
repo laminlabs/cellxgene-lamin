@@ -20,20 +20,17 @@ def lint(session: nox.Session) -> None:
     ["census", "validator", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
-    extra = ""
     if group == "census":
-        extra = ",jupyter,aws"
         session.run(*"uv pip install --system cellxgene-census".split())
     elif group == "validator":
-        extra = ",jupyter,aws,zarr"
         session.run(*"uv pip install --system cellxgene-schema".split())
         session.run(*"uv pip install --system anndata==0.9.0".split())
     session.run(*"uv pip install --system .[dev]".split())
-    session.run(
-        "pip",
-        "install",
-        f"lamindb[bionty{extra}] @ git+https://github.com/laminlabs/lamindb@release",
-    )
+    # session.run(
+    #     "pip",
+    #     "install",
+    #     f"lamindb[bionty{extra}] @ git+https://github.com/laminlabs/lamindb@release",
+    # )
 
 
 @nox.session
