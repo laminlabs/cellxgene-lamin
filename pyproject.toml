@@ -17,7 +17,6 @@ classifiers = [
 ]
 
 dependencies = [
-    "lamindb[bionty]",
     "requests"
 ]
 
