@@ -17,7 +17,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "requests"
+    "requests",
+    "lamindb[aws,jupyter,bionty,zarr] == 0.69.2"
 ]
 
 [project.urls]
