@@ -5,9 +5,7 @@ from typing import Dict, Optional, Union
 import anndata as ad
 import bionty as bt
 from lamin_utils import logger
-from lamindb.validation import AnnDataValidator
-from lamindb.validation._validate import validate_categories_in_df
-from lnschema_bionty import PublicSource
+from lamindb._validate import AnnDataValidator, validate_categories_in_df
 from lnschema_core.types import FieldAttr
 
 from ._curate import convert_name_to_ontology_id
@@ -72,9 +70,8 @@ class Validator(AnnDataValidator):
             obs_fields=_restrict_obs_fields(adata, obs_fields),
             using=using,
             verbosity=verbosity,
+            **kwargs,
         )
-        # TODO: deal with organism more consistently as other fields
-        self._kwargs = {k: v for k, v in kwargs.items() if k == "organism"}
         self._schema_version = "5.1.0"
         self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.1.0/schema.md"
         self._pinned_ontologies: Dict[str, str] = {
@@ -92,11 +89,6 @@ class Validator(AnnDataValidator):
     @property
     def pinned_ontologies(self) -> Dict[str, str]:
         return self._pinned_ontologies
-
-    @property
-    def adata_curated(self) -> ad.AnnData:
-        """Return the curated AnnData object."""
-        return self._adata_curated
 
     def to_cellxgene(
         self, is_primary_data: bool, title: Optional[str] = None
