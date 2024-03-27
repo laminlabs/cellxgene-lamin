@@ -5,9 +5,8 @@ from typing import Dict, Optional, Union
 import anndata as ad
 import bionty as bt
 from lamin_utils import logger
-from lamindb.validation import AnnDataValidator
-from lamindb.validation._validate import validate_categories_in_df
-from lnschema_bionty import PublicSource
+from lamin_validator import AnnDataValidator
+from lamin_validator._validate import validate_categories_in_df
 from lnschema_core.types import FieldAttr
 
 from ._curate import convert_name_to_ontology_id
