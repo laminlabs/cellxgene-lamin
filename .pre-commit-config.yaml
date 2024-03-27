@@ -14,15 +14,6 @@ repos:
           (?x)(
             docs/changelog.md
           )
-  - repo: https://github.com/kynan/nbstripout
-    rev: 0.6.1
-    hooks:
-      - id: nbstripout
-        exclude: |
-          (?x)(
-              docs/examples/|
-              docs/notebooks/
-          )
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.7
     hooks:
