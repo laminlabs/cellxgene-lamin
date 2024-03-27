@@ -67,6 +67,7 @@ def docs(session, group):
         f"lamindb[bionty{extra}] @ git+https://github.com/laminlabs/lamindb@main",
     )
     session.run(*f"pytest -s ./tests/test_notebooks.py::test_{group}".split())
+    session.run(*"pytest -s ./tests/test_notebooks.py::test_validator".split())
     session.run(*"lamin init --storage ./docsbuild --schema bionty".split())
     build_docs(session, strict=True)
     upload_docs_artifact(aws=True)
