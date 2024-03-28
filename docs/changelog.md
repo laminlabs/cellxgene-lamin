@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+⬆️ Pin lamindb to 0.69.3 | [42](https://github.com/laminlabs/cellxgene-lamin/pull/42) | [Zethson](https://github.com/Zethson) | 2024-03-28 |
 🚚 Rename Validate to Annotate | [43](https://github.com/laminlabs/cellxgene-lamin/pull/43) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-28 |
 Fix census notebook execution not being shown | [41](https://github.com/laminlabs/cellxgene-lamin/pull/41) | [Zethson](https://github.com/Zethson) | 2024-03-27 |
 Fix notebook execution rendering | [39](https://github.com/laminlabs/cellxgene-lamin/pull/39) | [Zethson](https://github.com/Zethson) | 2024-03-27 |
