@@ -5,7 +5,7 @@ from typing import Dict, Optional, Union
 import anndata as ad
 import bionty as bt
 from lamin_utils import logger
-from lamindb._validate import AnnDataValidator, validate_categories_in_df
+from lamindb._annotate import AnnDataAnnotator, validate_categories_in_df
 from lnschema_core.types import FieldAttr
 
 from ._curate import convert_name_to_ontology_id
@@ -51,8 +51,8 @@ def add_defaults_to_obs_fields(
         logger.important(f"added defaults to the AnnData object: {added_defaults}")
 
 
-class Validator(AnnDataValidator):
-    """CELLxGENE Lamin validator."""
+class Annotate(AnnDataAnnotator):
+    """Annotation flow of AnnData based on CELLxGENE schema."""
 
     def __init__(
         self,

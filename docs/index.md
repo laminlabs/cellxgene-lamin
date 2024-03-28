@@ -8,7 +8,7 @@
 :hidden:
 
 cellxgene
-cellxgene-lamin-validator
+cellxgene-annotate
 notebooks
 changelog
 ```
