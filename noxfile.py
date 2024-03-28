@@ -56,7 +56,6 @@ def build(session, group):
     ["census", "validator"],
 )
 def docs(session, group):
-    login_testuser1(session)
     # TODO This is currently a hack because else the executed notebooks are not rendered!
     extra = ",jupyter,aws,zarr"
     session.run(*"uv pip install --system cellxgene-census".split())
