@@ -4,7 +4,7 @@ import nbproject_test as test
 
 GROUPS = {
     "census": ["query-census.ipynb"],
-    "validator": ["cellxgene.ipynb", "cellxgene-lamin-validator.ipynb"],
+    "validator": ["cellxgene.ipynb", "cellxgene-annotate.ipynb"],
 }
 DOCS = Path(__file__).parent.parent / "docs/"
 
