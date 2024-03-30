@@ -77,16 +77,22 @@ jobs:
           channel: lamindb-mirror-github-actions
           status: FAILURE
           color: danger
+      - name: upload docs
+        if: ${{ matrix.group == 'census' || matrix.group == 'validator' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: docs_${{ matrix.group }}
+          path: docs_${{ matrix.group }}
 
   docs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: checkout lndocs
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: laminlabs/lndocs
           ssh-key: ${{ secrets.READ_LNDOCS }}
