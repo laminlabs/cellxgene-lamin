@@ -108,7 +108,7 @@ class Annotate(AnnDataAnnotator):
         if self._validated is None:
             validate_categories_in_df(
                 df=self._adata.obs,
-                fields=self.obs_fields,
+                fields=self.categoricals,
                 using=self._using,
             )
 
@@ -140,9 +140,9 @@ class Annotate(AnnDataAnnotator):
 
         # convert name column to ontology_term_id column
         for column in adata_cxg.obs.columns:
-            if column in self.obs_fields and not column.endswith("_ontology_term_id"):
+            if column in self.categoricals and not column.endswith("_ontology_term_id"):
                 mapped_column = convert_name_to_ontology_id(
-                    adata_cxg.obs[column], field=self.obs_fields.get(column)
+                    adata_cxg.obs[column], field=self.categoricals.get(column)
                 )
                 if mapped_column is not None:
                     adata_cxg.obs[f"{column}_ontology_term_id"] = mapped_column
