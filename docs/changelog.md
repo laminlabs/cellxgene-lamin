@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+⬆️ Update Annotate | [46](https://github.com/laminlabs/cellxgene-lamin/pull/46) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-31 |
 :art: Run census & annotate in parallel | [45](https://github.com/laminlabs/cellxgene-lamin/pull/45) | [Zethson](https://github.com/Zethson) | 2024-03-30 |
 ⬆️ Pin lamindb to 0.69.3 | [42](https://github.com/laminlabs/cellxgene-lamin/pull/42) | [Zethson](https://github.com/Zethson) | 2024-03-28 | 0.2.0
 🚚 Rename Validate to Annotate | [43](https://github.com/laminlabs/cellxgene-lamin/pull/43) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-28 |
