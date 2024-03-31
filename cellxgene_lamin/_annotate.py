@@ -57,8 +57,8 @@ class Annotate(AnnDataAnnotator):
     def __init__(
         self,
         adata: Union[ad.AnnData, str, Path],
-        var_field: FieldAttr = bt.Gene.ensembl_gene_id,
-        obs_fields: Dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
+        var_index: FieldAttr = bt.Gene.ensembl_gene_id,
+        categoricals: Dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
         using: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
         **kwargs,
@@ -66,8 +66,8 @@ class Annotate(AnnDataAnnotator):
         add_defaults_to_obs_fields(adata, **kwargs)
         super().__init__(
             adata=adata,
-            var_field=var_field,
-            obs_fields=_restrict_obs_fields(adata, obs_fields),
+            var_index=var_index,
+            categoricals=_restrict_obs_fields(adata, categoricals),
             using=using,
             verbosity=verbosity,
         )
@@ -107,7 +107,7 @@ class Annotate(AnnDataAnnotator):
         """
         if self._validated is None:
             validate_categories_in_df(
-                self._adata.obs,
+                df=self._adata.obs,
                 fields=self.obs_fields,
                 using=self._using,
             )
