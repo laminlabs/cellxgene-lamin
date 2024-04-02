@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:sparkles: Pin lamindb 0.69.5 | [47](https://github.com/laminlabs/cellxgene-lamin/pull/47) | [Zethson](https://github.com/Zethson) | 2024-04-02 |
 ⬆️ Update Annotate | [46](https://github.com/laminlabs/cellxgene-lamin/pull/46) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-31 |
 :art: Run census & annotate in parallel | [45](https://github.com/laminlabs/cellxgene-lamin/pull/45) | [Zethson](https://github.com/Zethson) | 2024-03-30 |
 ⬆️ Pin lamindb to 0.69.3 | [42](https://github.com/laminlabs/cellxgene-lamin/pull/42) | [Zethson](https://github.com/Zethson) | 2024-03-28 | 0.2.0
