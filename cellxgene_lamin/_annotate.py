@@ -76,9 +76,12 @@ class Annotate(AnnDataAnnotator):
         try:
             import cellxgene_schema
 
-            if cellxgene_schema.__version__ != self._schema_version:
+            major_minor_installed = cellxgene_schema.__version__.rsplit(".", 1)[0]
+            major_minor_expected = self._schema_version.rsplit(".", 1)[0]
+
+            if major_minor_installed != major_minor_expected:
                 logger.warn(
-                    f"Installed cellxgene-schema version {cellxgene_schema.__version__} does not match expected version {self._schema_version}"
+                    f"installed cellxgene-schema version {cellxgene_schema.__version__} does not match expected major and minor version {self._schema_version}"
                 )
         except ImportError:
             pass
@@ -180,8 +183,8 @@ class Annotate(AnnDataAnnotator):
                 adata_cxg.uns["title"] = title
         else:
             adata_cxg.uns["title"] = self._collection.name
-        adata_cxg.uns["schema_reference"] = self._schema_reference
-        adata_cxg.uns["schema_version"] = self._schema_version
+        adata_cxg.uns["cxg_lamin_schema_reference"] = self._schema_reference
+        adata_cxg.uns["cxg_lamin_schema_version"] = self._schema_version
 
         embedding_pattern = r"^[a-zA-Z][a-zA-Z0-9_.-]*$"
         exclude_key = "spatial"
