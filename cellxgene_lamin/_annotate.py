@@ -71,8 +71,18 @@ class Annotate(AnnDataAnnotator):
             using=using,
             verbosity=verbosity,
         )
-        self._schema_version = "5.1.0"
-        self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.1.0/schema.md"
+        self._schema_version = "5.0.0"
+        self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.0.0/schema.md"
+        try:
+            import cellxgene_schema
+
+            if cellxgene_schema.__version__ != self._schema_version:
+                logger.warn(
+                    f"Installed cellxgene-schema version {cellxgene_schema.__version__} does not match expected version {self._schema_version}"
+                )
+        except ImportError:
+            pass
+
         self._pinned_ontologies: Dict[str, str] = {
             "cl": "2024-01-04",
             "efo": "3.62.0",
