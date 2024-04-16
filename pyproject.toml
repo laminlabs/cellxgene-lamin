@@ -31,7 +31,6 @@ dev = [
     "pytest>=6.0",
     "pytest-cov",
     "nbproject_test",
-    "types-PyYAML"
 ]
 
 [tool.pytest.ini_options]
