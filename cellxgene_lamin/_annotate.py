@@ -1,15 +1,18 @@
 import re
+from importlib import resources
 from pathlib import Path
 from typing import Dict, Optional, Union
 
 import anndata as ad
 import bionty as bt
+import pandas as pd
 from lamin_utils import logger
 from lamindb._annotate import AnnDataAnnotator, validate_categories_in_df
 from lnschema_core.types import FieldAttr
 
 from ._curate import convert_name_to_ontology_id
 from ._fields import CellxGeneFields
+from .schemas._schema_versions import read_schema_versions
 
 
 def _restrict_obs_fields(adata: ad.AnnData, obs_fields: Dict[str, FieldAttr]):
@@ -86,20 +89,16 @@ class Annotate(AnnDataAnnotator):
         except ImportError:
             pass
 
-        self._pinned_ontologies: Dict[str, str] = {
-            "cl": "2024-01-04",
-            "efo": "3.62.0",
-            "hancestro": "3.0",
-            "hsapdv": "2020-03-10",
-            "mmusdv": "2020-03-10",
-            "mondo": "2024-01-03",
-            "ncbitaxon": "2023-06-20",
-            "pato": "2023-05-18",
-            "uberon": "2024-01-18",
-        }
+        with resources.path(
+            "cellxgene_lamin.schemas", "schema_versions.yml"
+        ) as schema_versions_path:
+            self._pinned_ontologies = read_schema_versions(schema_versions_path)[
+                self._schema_version
+            ]
 
     @property
-    def pinned_ontologies(self) -> Dict[str, str]:
+    def pinned_ontologies(self) -> pd.DataFrame:
+        print(f"Currently used schema version: {self._schema_version}")
         return self._pinned_ontologies
 
     def to_cellxgene(
