@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Simplify guide | [51](https://github.com/laminlabs/cellxgene-lamin/pull/51) | [falexwolf](https://github.com/falexwolf) | 2024-04-19 |
 :sparkles: Pinned ontologies schema | [50](https://github.com/laminlabs/cellxgene-lamin/pull/50) | [Zethson](https://github.com/Zethson) | 2024-04-16 |
 :sparkles: Compare installed and expected cellxgene-schema versions | [49](https://github.com/laminlabs/cellxgene-lamin/pull/49) | [Zethson](https://github.com/Zethson) | 2024-04-15 |
 :sparkles: Pin lamindb 0.69.5 | [47](https://github.com/laminlabs/cellxgene-lamin/pull/47) | [Zethson](https://github.com/Zethson) | 2024-04-02 |
