@@ -3,6 +3,17 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:sparkles: Pinned ontologies schema | [50](https://github.com/laminlabs/cellxgene-lamin/pull/50) | [Zethson](https://github.com/Zethson) | 2024-04-16 |
+:sparkles: Compare installed and expected cellxgene-schema versions | [49](https://github.com/laminlabs/cellxgene-lamin/pull/49) | [Zethson](https://github.com/Zethson) | 2024-04-15 |
+:sparkles: Pin lamindb 0.69.5 | [47](https://github.com/laminlabs/cellxgene-lamin/pull/47) | [Zethson](https://github.com/Zethson) | 2024-04-02 |
+⬆️ Update Annotate | [46](https://github.com/laminlabs/cellxgene-lamin/pull/46) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-31 |
+:art: Run census & annotate in parallel | [45](https://github.com/laminlabs/cellxgene-lamin/pull/45) | [Zethson](https://github.com/Zethson) | 2024-03-30 |
+⬆️ Pin lamindb to 0.69.3 | [42](https://github.com/laminlabs/cellxgene-lamin/pull/42) | [Zethson](https://github.com/Zethson) | 2024-03-28 | 0.2.0
+🚚 Rename Validate to Annotate | [43](https://github.com/laminlabs/cellxgene-lamin/pull/43) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-28 |
+Fix census notebook execution not being shown | [41](https://github.com/laminlabs/cellxgene-lamin/pull/41) | [Zethson](https://github.com/Zethson) | 2024-03-27 |
+Fix notebook execution rendering | [39](https://github.com/laminlabs/cellxgene-lamin/pull/39) | [Zethson](https://github.com/Zethson) | 2024-03-27 |
+Add 5.1.0 pinned ontologies & ruff | [37](https://github.com/laminlabs/cellxgene-lamin/pull/37) | [Zethson](https://github.com/Zethson) | 2024-03-19 |
+✨ Moved cellxgene-lamin-validator here | [36](https://github.com/laminlabs/cellxgene-lamin/pull/36) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-19 | 0.1.0
 💚 Fix CI | [34](https://github.com/laminlabs/cellxgene-lamin/pull/34) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-01 |
 👷 Use 3.10 for tests | [33](https://github.com/laminlabs/cellxgene-lamin/pull/33) | [sunnyosun](https://github.com/sunnyosun) | 2024-02-01 |
 🎨 Import bionty instead of lb | [32](https://github.com/laminlabs/cellxgene-lamin/pull/32) | [sunnyosun](https://github.com/sunnyosun) | 2024-02-01 |

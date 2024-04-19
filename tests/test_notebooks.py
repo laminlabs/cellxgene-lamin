@@ -2,10 +2,18 @@ from pathlib import Path
 
 import nbproject_test as test
 
+GROUPS = {
+    "census": ["query-census.ipynb"],
+    "validator": ["cellxgene.ipynb", "cellxgene-annotate.ipynb"],
+}
+DOCS = Path(__file__).parent.parent / "docs/"
 
-def test_notebooks():
-    # assuming this is in the tests folder
-    docs_folder = Path(__file__).parents[1] / "docs/"
-    test.execute_notebooks(
-        docs_folder, write=True, print_cells=False, print_outputs=False
-    )
+
+def test_census():
+    for filename in GROUPS["census"]:
+        test.execute_notebooks(DOCS / filename, write=True)
+
+
+def test_validator():
+    for filename in GROUPS["validator"]:
+        test.execute_notebooks(DOCS / filename, write=True)

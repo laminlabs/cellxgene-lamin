@@ -108,3 +108,5 @@ docs/conf.py
 _docs_tmp*
 test-cellxgene-registries/
 test-cellxgene/
+*.lndb
+*.h5ad
