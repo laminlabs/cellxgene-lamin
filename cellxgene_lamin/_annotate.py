@@ -68,7 +68,7 @@ class Annotate(AnnDataAnnotator):
     ):
         add_defaults_to_obs_fields(adata, **kwargs)
         super().__init__(
-            adata=adata,
+            data=adata,
             var_index=var_index,
             categoricals=_restrict_obs_fields(adata, categoricals),
             using=using,
