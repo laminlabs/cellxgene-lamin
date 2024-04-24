@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+👷 Use uv | [53](https://github.com/laminlabs/cellxgene-lamin/pull/53) | [sunnyosun](https://github.com/sunnyosun) | 2024-04-24 |
 💚 Fix data arg | [52](https://github.com/laminlabs/cellxgene-lamin/pull/52) | [sunnyosun](https://github.com/sunnyosun) | 2024-04-24 |
 ♻️ Simplify guide | [51](https://github.com/laminlabs/cellxgene-lamin/pull/51) | [falexwolf](https://github.com/falexwolf) | 2024-04-19 |
 :sparkles: Pinned ontologies schema | [50](https://github.com/laminlabs/cellxgene-lamin/pull/50) | [Zethson](https://github.com/Zethson) | 2024-04-16 |
