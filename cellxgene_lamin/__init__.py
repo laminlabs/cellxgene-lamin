@@ -14,7 +14,7 @@ This is the complete API reference:
    datasets
 """
 
-__version__ = "0.2.1"  # denote a pre-release for 0.1.0 with 0.1rc1
+__version__ = "0.2.2"  # denote a pre-release for 0.1.0 with 0.1rc1
 
 from . import datasets
 from ._annotate import Annotate
