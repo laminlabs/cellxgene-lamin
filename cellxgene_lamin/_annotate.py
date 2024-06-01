@@ -62,8 +62,10 @@ class Annotate(AnnDataAnnotator):
         adata: Union[ad.AnnData, str, Path],
         var_index: FieldAttr = bt.Gene.ensembl_gene_id,
         categoricals: Dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
+        *,
         using: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
+        organism: str | None = None,
         **kwargs,
     ):
         add_defaults_to_obs_fields(adata, **kwargs)
@@ -73,7 +75,7 @@ class Annotate(AnnDataAnnotator):
             categoricals=_restrict_obs_fields(adata, categoricals),
             using=using,
             verbosity=verbosity,
-            **kwargs,
+            organism=organism,
         )
         self._schema_version = "5.0.0"
         self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.0.0/schema.md"
