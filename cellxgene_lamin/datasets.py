@@ -25,10 +25,10 @@ def anndata_human_immune_cells(populate_registries):
         ln.save(cell_types)
         organism = bt.Organism.from_public(name="human")
         organism.save()
-        # genes = bt.Gene.from_values(
-        #    adata.var_names, field=bt.Gene.ensembl_gene_id, organism=organism
-        # )
-        # ln.save(genes[:-10])
+        genes = bt.Gene.from_values(
+            adata.var_names, field=bt.Gene.ensembl_gene_id, organism=organism
+        )
+        ln.save(genes[:-10])
         ln.settings.verbosity = verbosity
 
     return adata
