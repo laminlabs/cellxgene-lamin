@@ -73,6 +73,7 @@ class Annotate(AnnDataAnnotator):
             categoricals=_restrict_obs_fields(adata, categoricals),
             using=using,
             verbosity=verbosity,
+            **kwargs,
         )
         self._schema_version = "5.0.0"
         self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.0.0/schema.md"
