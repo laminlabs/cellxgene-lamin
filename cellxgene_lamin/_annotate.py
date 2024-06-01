@@ -39,11 +39,11 @@ def _restrict_obs_fields(adata: ad.AnnData, obs_fields: Dict[str, FieldAttr]):
 
 def add_defaults_to_obs_fields(
     adata: ad.AnnData,
-    **kwargs,
+    defaults: Dict[str, str],
 ):
     """Add defaults to the obs fields."""
     added_defaults: Dict = {}
-    for name, default in kwargs.items():
+    for name, default in defaults.items():
         if (
             name not in adata.obs.columns
             and f"{name}_ontology_term_id" not in adata.obs.columns
@@ -63,12 +63,12 @@ class Annotate(AnnDataAnnotator):
         var_index: FieldAttr = bt.Gene.ensembl_gene_id,
         categoricals: Dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
         *,
+        defaults: Dict[str, str] = None,
         using: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
         organism: str | None = None,
-        **kwargs,
     ):
-        add_defaults_to_obs_fields(adata, **kwargs)
+        add_defaults_to_obs_fields(adata, defaults)
         super().__init__(
             data=adata,
             var_index=var_index,
