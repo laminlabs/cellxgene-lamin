@@ -68,7 +68,8 @@ class Annotate(AnnDataAnnotator):
         verbosity: str = "hint",
         organism: str | None = None,
     ):
-        add_defaults_to_obs_fields(adata, defaults)
+        if defaults:
+            add_defaults_to_obs_fields(adata, defaults)
         super().__init__(
             data=adata,
             var_index=var_index,
