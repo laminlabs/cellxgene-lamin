@@ -110,3 +110,4 @@ test-cellxgene-registries/
 test-cellxgene/
 *.lndb
 *.h5ad
+*.lamindb

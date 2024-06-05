@@ -39,11 +39,11 @@ def _restrict_obs_fields(adata: ad.AnnData, obs_fields: Dict[str, FieldAttr]):
 
 def add_defaults_to_obs_fields(
     adata: ad.AnnData,
-    **kwargs,
+    defaults: Dict[str, str],
 ):
     """Add defaults to the obs fields."""
     added_defaults: Dict = {}
-    for name, default in kwargs.items():
+    for name, default in defaults.items():
         if (
             name not in adata.obs.columns
             and f"{name}_ontology_term_id" not in adata.obs.columns
@@ -62,17 +62,20 @@ class Annotate(AnnDataAnnotator):
         adata: Union[ad.AnnData, str, Path],
         var_index: FieldAttr = bt.Gene.ensembl_gene_id,
         categoricals: Dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
+        *,
+        defaults: Dict[str, str] = None,
         using: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
-        **kwargs,
+        organism: str | None = None,
     ):
-        add_defaults_to_obs_fields(adata, **kwargs)
+        add_defaults_to_obs_fields(adata, defaults)
         super().__init__(
             data=adata,
             var_index=var_index,
             categoricals=_restrict_obs_fields(adata, categoricals),
             using=using,
             verbosity=verbosity,
+            organism=organism,
         )
         self._schema_version = "5.0.0"
         self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.0.0/schema.md"

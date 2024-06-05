@@ -36,4 +36,5 @@ class CellxGeneFields:
         "tissue_type": "tissue",
         "cell_type": "native_cell",
         "sex": "unknown",
+        "organism": "unknown",
     }
