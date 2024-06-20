@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Add a query with types | [57](https://github.com/laminlabs/cellxgene-lamin/pull/57) | [falexwolf](https://github.com/falexwolf) | 2024-06-20 |
 📝 Prettier query in cellxgene notebook | [56](https://github.com/laminlabs/cellxgene-lamin/pull/56) | [falexwolf](https://github.com/falexwolf) | 2024-06-20 |
 :sparkles: Fix passing organism | [55](https://github.com/laminlabs/cellxgene-lamin/pull/55) | [Zethson](https://github.com/Zethson) | 2024-06-05 |
 ♻️ Fixes for lamindb 0.72 | [54](https://github.com/laminlabs/cellxgene-lamin/pull/54) | [falexwolf](https://github.com/falexwolf) | 2024-05-19 | 0.2.2
