@@ -25,6 +25,7 @@ def lint(session: nox.Session) -> None:
 )
 def install(session: nox.Session, group: str) -> None:
     extra = ""
+    session.run(*"uv pip install --system scipy>=1.12.0,<1.13.0rc1".split())
     if group == "census":
         extra = ",jupyter,aws"
         session.run(*"uv pip install --system cellxgene-census".split())
