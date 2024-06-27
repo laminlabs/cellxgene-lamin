@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix docs build | [59](https://github.com/laminlabs/cellxgene-lamin/pull/59) | [Koncopd](https://github.com/Koncopd) | 2024-06-27 |
 💚 Remaining fix | [58](https://github.com/laminlabs/cellxgene-lamin/pull/58) | [falexwolf](https://github.com/falexwolf) | 2024-06-27 |
 ♻️ Add a query with types | [57](https://github.com/laminlabs/cellxgene-lamin/pull/57) | [falexwolf](https://github.com/falexwolf) | 2024-06-20 |
 📝 Prettier query in cellxgene notebook | [56](https://github.com/laminlabs/cellxgene-lamin/pull/56) | [falexwolf](https://github.com/falexwolf) | 2024-06-20 |
