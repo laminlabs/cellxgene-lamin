@@ -2,7 +2,7 @@ def anndata_human_immune_cells(populate_registries):
     """Anndata object with semi-curated metadata."""
     import lamindb as ln
 
-    adata = ln.dev.datasets.anndata_human_immune_cells()
+    adata = ln.core.datasets.anndata_human_immune_cells()
     adata.obs["sex_ontology_term_id"] = "PATO:0000384"
     adata.obs["organism"] = "human"
     # create some typos in the metadata
