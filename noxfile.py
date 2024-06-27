@@ -25,13 +25,13 @@ def lint(session: nox.Session) -> None:
 )
 def install(session: nox.Session, group: str) -> None:
     extra = ""
+    session.run(*"uv pip install --system scipy>=1.12.0,<1.13.0rc1".split())
     if group == "census":
         extra = ",jupyter,aws"
         session.run(*"uv pip install --system cellxgene-census".split())
     elif group == "validator":
         extra = ",jupyter,aws,zarr"
         session.run(*"uv pip install --system cellxgene-schema==5.0.2".split())
-        session.run(*"uv pip install --system anndata==0.9.0".split())
     session.run(*"uv pip install --system .[dev]".split())
     session.run(
         "uv",
