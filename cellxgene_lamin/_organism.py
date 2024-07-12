@@ -9,14 +9,14 @@ def register_organisms(cxg_datasets):
     import lamindb as ln
 
     # register all organisms
-    ncbitaxon_source = bt.BiontySource.filter(source="ncbitaxon").one()
+    ncbitaxon_source = bt.PublicSource.filter(source="ncbitaxon").one()
 
     organisms_meta = set()
     for cxg_dataset in cxg_datasets:
         organisms_meta.update({i["ontology_term_id"] for i in cxg_dataset["organism"]})
 
     organisms_records = bt.Organism.from_values(
-        organisms_meta, field=bt.Organism.ontology_id, bionty_source=ncbitaxon_source
+        organisms_meta, field=bt.Organism.ontology_id, public_source=ncbitaxon_source
     )
     # rename 'house mouse' to 'mouse'
     for r in organisms_records:
