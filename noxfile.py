@@ -28,7 +28,7 @@ def install(session: nox.Session, group: str) -> None:
     session.run(*"uv pip install --system scipy>=1.12.0,<1.13.0rc1".split())
     if group == "census":
         extra = ",jupyter,aws"
-        session.run(*"uv pip install --system cellxgene-census".split())
+        session.run(*"uv pip install --system tiledbsoma".split())
     elif group == "validator":
         extra = ",jupyter,aws,zarr"
         session.run(*"uv pip install --system cellxgene-schema==5.0.2".split())
