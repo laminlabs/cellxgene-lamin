@@ -21,7 +21,7 @@ def register_genes():
         gene_records = bt.Gene.from_values(
             df.index, field=bt.Gene.ensembl_gene_id, organism=organism_record
         )
-        ln.save(gene_records)
+        ln.save([r for r in gene_records if r._state.adding])
         validated = bt.Gene.validate(
             df.index, field=bt.Gene.ensembl_gene_id, organism=organism_record
         )
@@ -37,8 +37,8 @@ def register_genes():
             )
         ln.save(new_records)
 
-        genes_feature_set = ln.FeatureSet(
-            features=gene_records + new_records,
-            name=f"all {organism_record.name} genes",
-        )
-        genes_feature_set.save()
+        # genes_feature_set = ln.FeatureSet(
+        #     features=gene_records + new_records,
+        #     name=f"all {organism_record.name} genes",
+        # )
+        # genes_feature_set.save()
