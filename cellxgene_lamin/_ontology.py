@@ -46,8 +46,8 @@ def register_ontology_ids(cxg_datasets: Iterable):
     ).one()
     public_source_pato = bt.PublicSource.filter(source="pato").one()
 
-    upon_create_search_names = ln.settings.upon_create_search_names
-    ln.settings.upon_create_search_names = False
+    upon_create_search_names = ln.settings.creation.search_names
+    ln.settings.creation.search_names = False
 
     # register all ontology ids
     for name, terms in ontology_ids.items():
@@ -98,7 +98,7 @@ def register_ontology_ids(cxg_datasets: Iterable):
             if len(records) > 0:
                 print(f"registered {len(records)} records: {records}")
                 ln.save(records)
-    ln.settings.upon_create_search_names = upon_create_search_names
+    ln.settings.creation.search_names = upon_create_search_names
 
     # clean up the 2 "unknowns" in DevelopmentalStage
     bt.DevelopmentalStage.filter(name="unknown").exclude(ontology_id="unknown").delete()

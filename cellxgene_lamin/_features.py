@@ -1,5 +1,5 @@
 import lamindb as ln
-from lamindb.dev._feature_manager import get_accessor_by_orm
+from lamindb.core._feature_manager import get_accessor_by_registry_
 
 OBS_FEATURES = {
     "assay": "bionty.ExperimentalFactor",
@@ -12,16 +12,17 @@ OBS_FEATURES = {
     "suspension_type": "core.ULabel",
     "tissue": "bionty.Tissue",
     "tissue_type": "core.ULabel",
+    "organism": "bionty.Organism",
 }
 
-EXT_FEATURES = {"organism": "bionty.Organism"}
-
 obs_features_records = ln.FeatureSet.filter(name="obs metadata").one().members.lookup()
-ACCESSORS = get_accessor_by_orm(ln.Artifact)
+ACCESSORS = get_accessor_by_registry_(ln.Artifact)
 FEATURE_TO_ACCESSOR = {}
 for name in OBS_FEATURES.keys():
     feature = getattr(obs_features_records, name)
-    accessor = ACCESSORS.get(feature.registries)
+    accessor = ACCESSORS.get(
+        feature.dtype[feature.dtype.index("[") + 1 : feature.dtype.index("]")]
+    )
     orm = getattr(ln.Artifact, accessor).field.model
     # TODO: ulabels are defined in the File model, improve this in LaminDB
     if orm == ln.Artifact:
@@ -29,23 +30,18 @@ for name in OBS_FEATURES.keys():
     FEATURE_TO_ACCESSOR[name] = (accessor, orm)
 
 
-def register_feature_set(artifacts, slot: str):
+def register_obs_featureset(artifacts):
     import lamindb as ln
 
-    if slot == "obs":
-        features = OBS_FEATURES
-    elif slot == "ext":
-        features = EXT_FEATURES
-
-    feature_set = ln.FeatureSet.filter(name=f"{slot} features").one_or_none()
+    feature_set = ln.FeatureSet.filter(name="obs metadata").one_or_none()
     if feature_set is None:
         features_records = []
-        for name, registry in features.items():
-            record = ln.Feature(name=name, type="category", registries=registry)
+        for name, registry in OBS_FEATURES.items():
+            record = ln.Feature(name=name, dtype=f"cat[{registry}]").save()
             features_records.append(record)
         ln.save(features_records)
-        feature_set = ln.FeatureSet(features=features_records, name=f"{slot} metadata")
+        feature_set = ln.FeatureSet(features=features_records, name="obs metadata")
         feature_set.save()
 
-    feature_set.artifacts.add(*artifacts, through_defaults={"slot": slot})
+    feature_set.artifacts.add(*artifacts, through_defaults={"slot": "obs"})
     return feature_set
