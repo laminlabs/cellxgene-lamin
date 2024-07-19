@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+📝 Use backed to open census | [62](https://github.com/laminlabs/cellxgene-lamin/pull/62) | [Koncopd](https://github.com/Koncopd) | 2024-07-19 |
 ✨ Register 2024-07-01-LTS | [61](https://github.com/laminlabs/cellxgene-lamin/pull/61) | [sunnyosun](https://github.com/sunnyosun) | 2024-07-16 |
 📝 Use tiledbsoma instead of census to query data | [60](https://github.com/laminlabs/cellxgene-lamin/pull/60) | [Koncopd](https://github.com/Koncopd) | 2024-07-12 |
 🐛 Fix docs build | [59](https://github.com/laminlabs/cellxgene-lamin/pull/59) | [Koncopd](https://github.com/Koncopd) | 2024-06-27 |
