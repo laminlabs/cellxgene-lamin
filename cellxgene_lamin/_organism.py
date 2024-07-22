@@ -25,7 +25,7 @@ def register_organisms(cxg_datasets):
     ln.save(organisms_records, parents=False)
 
 
-def annotate_organisms(artifacts: Artifact, cxg_datasets: Iterable):
+def curate_organisms(artifacts: Artifact, cxg_datasets: Iterable):
     import bionty as bt
     import lamindb as ln
 
@@ -39,7 +39,7 @@ def annotate_organisms(artifacts: Artifact, cxg_datasets: Iterable):
         if artifact is None:
             continue
 
-        # annotate artifacts with organisms
+        # curate artifacts with organisms
         organism_ontology_ids = [i["ontology_term_id"] for i in cxg_dataset["organism"]]
         organism_records = bt.Organism.filter(
             ontology_id__in=organism_ontology_ids

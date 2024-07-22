@@ -9,7 +9,7 @@ nox.options.default_venv_backend = "none"
 
 GROUPS = {
     "census": ["query-census.ipynb"],
-    "validator": ["cellxgene.ipynb", "cellxgene-annotate.ipynb"],
+    "validator": ["cellxgene.ipynb", "cellxgene-curate.ipynb"],
 }
 
 
