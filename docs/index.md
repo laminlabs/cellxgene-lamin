@@ -8,7 +8,7 @@
 :hidden:
 
 cellxgene
-cellxgene-annotate
+cellxgene-curate
 notebooks
 changelog
 ```
