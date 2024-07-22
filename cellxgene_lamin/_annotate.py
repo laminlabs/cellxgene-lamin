@@ -54,7 +54,7 @@ def add_defaults_to_obs_fields(
         logger.important(f"added defaults to the AnnData object: {added_defaults}")
 
 
-class Annotate(AnnDataAnnotator):
+class Curate(AnnDataAnnotator):
     """Annotation flow of AnnData based on CELLxGENE schema."""
 
     def __init__(
