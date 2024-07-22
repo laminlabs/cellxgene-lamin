@@ -7,7 +7,7 @@ import anndata as ad
 import bionty as bt
 import pandas as pd
 from lamin_utils import logger
-from lamindb._curate import AnnDataAnnotator, validate_categories_in_df
+from lamindb._curate import AnnDataCurator, validate_categories_in_df
 from lnschema_core.types import FieldAttr
 
 from ._fields import CellxGeneFields
@@ -66,7 +66,7 @@ def add_defaults_to_obs_fields(
         logger.important(f"added defaults to the AnnData object: {added_defaults}")
 
 
-class Curate(AnnDataAnnotator):
+class Curate(AnnDataCurator):
     """Annotation flow of AnnData based on CELLxGENE schema."""
 
     def __init__(
