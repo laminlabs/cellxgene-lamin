@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Rename Annotate to Curate | [64](https://github.com/laminlabs/cellxgene-lamin/pull/64) | [falexwolf](https://github.com/falexwolf) | 2024-07-22 |
 📝 Rename backed to open in guides | [63](https://github.com/laminlabs/cellxgene-lamin/pull/63) | [Koncopd](https://github.com/Koncopd) | 2024-07-21 |
 📝 Use backed to open census | [62](https://github.com/laminlabs/cellxgene-lamin/pull/62) | [Koncopd](https://github.com/Koncopd) | 2024-07-19 |
 ✨ Register 2024-07-01-LTS | [61](https://github.com/laminlabs/cellxgene-lamin/pull/61) | [sunnyosun](https://github.com/sunnyosun) | 2024-07-16 |
