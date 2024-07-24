@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+Update pinned lamindb to 0.74.2 | [65](https://github.com/laminlabs/cellxgene-lamin/pull/65) | [Zethson](https://github.com/Zethson) | 2024-07-24 |
 🚚 Rename Annotate to Curate | [64](https://github.com/laminlabs/cellxgene-lamin/pull/64) | [falexwolf](https://github.com/falexwolf) | 2024-07-22 |
 📝 Rename backed to open in guides | [63](https://github.com/laminlabs/cellxgene-lamin/pull/63) | [Koncopd](https://github.com/Koncopd) | 2024-07-21 |
 📝 Use backed to open census | [62](https://github.com/laminlabs/cellxgene-lamin/pull/62) | [Koncopd](https://github.com/Koncopd) | 2024-07-19 |
