@@ -52,7 +52,7 @@ jobs:
         if: steps.cache-postgres.outputs.cache-hit == 'true'
         run: docker image load --input ~/postgres.tar
       - run: |
-          pip install -U laminci
+          pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
           sudo apt-get -y install graphviz
       - run: nox -s lint
         if: ${{ matrix.python-version == '3.10' && matrix.group == 'validator' }}
