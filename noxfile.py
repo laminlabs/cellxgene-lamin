@@ -24,22 +24,20 @@ def lint(session: nox.Session) -> None:
     ["census", "validator", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
-    extra = ""
     session.run(*"uv pip install --system scipy>=1.12.0,<1.13.0rc1".split())
     if group == "census":
-        extra = ",jupyter,aws"
         session.run(*"uv pip install --system tiledbsoma".split())
     elif group == "validator":
-        extra = ",jupyter,aws,zarr"
         session.run(*"uv pip install --system cellxgene-schema==5.0.2".split())
     session.run(*"uv pip install --system .[dev]".split())
-    session.run(
-        "uv",
-        "pip",
-        "install",
-        "--system",
-        f"lamindb[bionty{extra}] @ git+https://github.com/laminlabs/lamindb@release",
-    )
+    # do not install from release branch for now
+    # session.run(
+    #     "uv",
+    #     "pip",
+    #     "install",
+    #     "--system",
+    #     f"lamindb[bionty{extra}] @ git+https://github.com/laminlabs/lamindb@release",
+    # )
 
 
 @nox.session
