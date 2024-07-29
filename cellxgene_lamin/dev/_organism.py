@@ -1,31 +1,32 @@
-from typing import TYPE_CHECKING, Iterable
+from typing import Iterable
 
 from lamindb import Artifact
-from lnschema_core import Registry
 
 
-def register_organisms(cxg_datasets):
+def register_organisms(cxg_datasets: dict) -> None:
     import bionty as bt
     import lamindb as ln
 
     # register all organisms
-    ncbitaxon_source = bt.PublicSource.filter(source="ncbitaxon").one()
+    ncbitaxon_source = bt.PublicSource.filter(source="ncbitaxon").first()
 
     organisms_meta = set()
     for cxg_dataset in cxg_datasets:
-        organisms_meta.update({i["ontology_term_id"] for i in cxg_dataset["organism"]})
+        organisms_meta.update(
+            {organism["ontology_term_id"] for organism in cxg_dataset["organism"]}
+        )
 
     organisms_records = bt.Organism.from_values(
-        organisms_meta, field=bt.Organism.ontology_id, public_source=ncbitaxon_source
+        organisms_meta, field=bt.Organism.ontology_id, source=ncbitaxon_source
     )
     # rename 'house mouse' to 'mouse'
-    for r in organisms_records:
-        if r.name == "house mouse":
-            r.name = "mouse"
-    ln.save(organisms_records, parents=False)
+    for record in organisms_records:
+        if record.name == "house mouse":
+            record.name = "mouse"
+    ln.save(organisms_records)
 
 
-def curate_organisms(artifacts: Artifact, cxg_datasets: Iterable):
+def curate_organisms(artifacts: Artifact, cxg_datasets: Iterable) -> None:
     import bionty as bt
     import lamindb as ln
 
@@ -40,7 +41,9 @@ def curate_organisms(artifacts: Artifact, cxg_datasets: Iterable):
             continue
 
         # curate artifacts with organisms
-        organism_ontology_ids = [i["ontology_term_id"] for i in cxg_dataset["organism"]]
+        organism_ontology_ids = [
+            organism["ontology_term_id"] for organism in cxg_dataset["organism"]
+        ]
         organism_records = bt.Organism.filter(
             ontology_id__in=organism_ontology_ids
         ).list()

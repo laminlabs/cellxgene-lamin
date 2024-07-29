@@ -10,7 +10,7 @@ from lamin_utils import logger
 from lamindb._curate import AnnDataCurator, validate_categories_in_df
 from lnschema_core.types import FieldAttr
 
-from ._fields import CellxGeneFields
+from .fields import CellxGeneFields
 from .schemas._schema_versions import read_schema_versions
 
 
