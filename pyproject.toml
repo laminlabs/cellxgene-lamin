@@ -16,7 +16,10 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 
-dependencies = []
+dependencies = [
+    "lamindb[bionty,aws,zarr,jupyter]",
+    "requests",
+]
 
 [project.urls]
 Home = "https://github.com/laminlabs/cellxgene-lamin"
