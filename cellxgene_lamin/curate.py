@@ -1,20 +1,29 @@
+from __future__ import annotations
+
 import re
 from importlib import resources
-from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
-import anndata as ad
 import bionty as bt
 import pandas as pd
 from lamin_utils import logger
 from lamindb._curate import AnnDataCurator, validate_categories_in_df
-from lnschema_core.types import FieldAttr
 
 from .fields import CellxGeneFields
 from .schemas._schema_versions import read_schema_versions
 
+if TYPE_CHECKING:
+    from pathlib import Path
 
-def convert_name_to_ontology_id(values: pd.Series, field: FieldAttr):
+    import anndata as ad
+    from lnschema_core.types import FieldAttr
+
+
+def _convert_name_to_ontology_id(values: pd.Series, field: FieldAttr):
+    """Converts a column that stores a name into a column that stores the ontology id.
+
+    cellxgene expects the obs columns to be {entity}_ontology_id columns and disallows {entity} columns.
+    """
     field_name = field.field.name
     assert field_name == "name"
     cols = ["name", "ontology_id"]
@@ -27,8 +36,15 @@ def convert_name_to_ontology_id(values: pd.Series, field: FieldAttr):
         return values.map(mapper)
 
 
-def _restrict_obs_fields(adata: ad.AnnData, obs_fields: Dict[str, FieldAttr]):
-    """Restrict the obs fields so that there's no duplications."""
+def _restrict_obs_fields(
+    adata: ad.AnnData, obs_fields: dict[str, FieldAttr]
+) -> dict[str, str]:
+    """Restrict the obs fields to name return only available obs fields.
+
+    To simplify the curation, we only validate against either name or ontology_id.
+    If both are available, we validate against ontology_id.
+    If none are available, we validate against name.
+    """
     obs_fields_unique = {k: v for k, v in obs_fields.items() if k in adata.obs.columns}
     for name, field in obs_fields.items():
         if name.endswith("_ontology_term_id"):
@@ -46,15 +62,21 @@ def _restrict_obs_fields(adata: ad.AnnData, obs_fields: Dict[str, FieldAttr]):
             and f"{name}_ontology_term_id" not in adata.obs.columns
         ):
             obs_fields_unique[name] = field
-    return obs_fields_unique
+
+    # Only retain obs_fields_unique that have keys in adata.obs.columns
+    available_obs_fields = {
+        k: v for k, v in obs_fields_unique.items() if k in adata.obs.columns
+    }
+
+    return available_obs_fields
 
 
-def add_defaults_to_obs_fields(
+def add_defaults_to_obs(
     adata: ad.AnnData,
-    defaults: Dict[str, str],
-):
-    """Add defaults to the obs fields."""
-    added_defaults: Dict = {}
+    defaults: dict[str, str],
+) -> None:
+    """Add missing obs columns and defaults to the obs fields."""
+    added_defaults: dict = {}
     for name, default in defaults.items():
         if (
             name not in adata.obs.columns
@@ -71,21 +93,23 @@ class Curate(AnnDataCurator):
 
     def __init__(
         self,
-        adata: Union[ad.AnnData, str, Path],
+        adata: ad.AnnData | str | Path,
         var_index: FieldAttr = bt.Gene.ensembl_gene_id,
-        categoricals: Dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
+        categoricals: dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
         *,
-        defaults: Dict[str, str] = None,
+        defaults: dict[str, str] = None,
         using: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
         organism: str | None = None,
     ):
         if defaults:
-            add_defaults_to_obs_fields(adata, defaults)
+            add_defaults_to_obs(adata, defaults)
+        self._categoricals = categoricals
+
         super().__init__(
             data=adata,
             var_index=var_index,
-            categoricals=_restrict_obs_fields(adata, categoricals),
+            categoricals=_restrict_obs_fields(adata, self._categoricals),
             using=using,
             verbosity=verbosity,
             organism=organism,
@@ -117,18 +141,40 @@ class Curate(AnnDataCurator):
         print(f"Currently used schema version: {self._schema_version}")
         return self._pinned_ontologies
 
-    def to_cellxgene(
-        self, is_primary_data: bool, title: Optional[str] = None
+    def validate(self, organism: str | None = None) -> bool:
+        missing_obs_fields = []
+        for name in CellxGeneFields.OBS_FIELD_DEFAULTS.keys():
+            if (
+                name not in self._adata.obs.columns
+                and f"{name}_ontology_term_id" not in self._adata.obs.columns
+            ):
+                missing_obs_fields.append(name)
+
+        if len(missing_obs_fields) > 0:
+            missing_obs_fields_str = ", ".join(list(missing_obs_fields))
+            logger.error(f"missing required obs columns {missing_obs_fields_str}")
+            logger.info(
+                "consider initializing a Curate object like 'Curate(adata, defaults=cxg.CellxGeneFields.OBS_FIELD_DEFAULTS)'"
+                "to automatically add these columns with default values."
+            )
+            return False
+
+        return super().validate(organism=organism)
+
+    def to_cellxgene_anndata(
+        self, is_primary_data: bool, title: str | None = None
     ) -> ad.AnnData:
         """Converts the AnnData object to the cellxgene-schema input format.
 
-        Be aware that this function only implements the most important requires of the CELLxGENE schema.
+        cellxgene expects the obs fields to be {entity}_ontology_id fields and has many further requirements which are
+        documented here: https://github.com/chanzuckerberg/single-cell-curation/tree/main/schema.
+        This function checks for most but not all requirements of the CELLxGENE schema.
         If you want to ensure that it fully adheres to the CELLxGENE schema, run `cellxgene-schema` on the AnnData object.
 
         Args:
             is_primary_data: Whether the measured data is primary data or not.
             title: Title of the AnnData object. Commonly the name of the publication.
-                   This parameter is required if the AnnData object is not a part of a collection.
+                   This parameter is required if the AnnData object is not a part of a Collection.
 
         Returns:
             An AnnData object which adheres to the cellxgene-schema.
@@ -169,7 +215,7 @@ class Curate(AnnDataCurator):
         # convert name column to ontology_term_id column
         for column in adata_cxg.obs.columns:
             if column in self.categoricals and not column.endswith("_ontology_term_id"):
-                mapped_column = convert_name_to_ontology_id(
+                mapped_column = _convert_name_to_ontology_id(
                     adata_cxg.obs[column], field=self.categoricals.get(column)
                 )
                 if mapped_column is not None:

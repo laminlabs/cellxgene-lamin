@@ -28,13 +28,14 @@ class CellxGeneFields:
     }
 
     OBS_FIELD_DEFAULTS = {
-        "disease": "normal",
-        "development_stage": "unknown",
-        "self_reported_ethnicity": "unknown",
-        "suspension_type": "cell",
-        "donor_id": "na",
-        "tissue_type": "tissue",
+        "assay": "unknown",
         "cell_type": "native_cell",
+        "development_stage": "unknown",
+        "disease": "normal",
+        "donor_id": "na",
+        "self_reported_ethnicity": "unknown",
         "sex": "unknown",
+        "suspension_type": "cell",
+        "tissue_type": "tissue",
         "organism": "unknown",
     }

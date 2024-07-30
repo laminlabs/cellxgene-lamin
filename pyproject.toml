@@ -40,7 +40,7 @@ testpaths = [
 
 
 [tool.ruff]
-src = ["bionty_base"]
+src = ["cellxgene_lamin"]
 line-length = 88
 select = [
     "F",  # Errors detected by Pyflakes
