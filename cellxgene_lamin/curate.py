@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from importlib import resources
 from typing import TYPE_CHECKING, Dict, Optional, Union
-
 import bionty as bt
 import pandas as pd
 from lamin_utils import logger
