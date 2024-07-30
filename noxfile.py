@@ -40,6 +40,13 @@ def install(session: nox.Session, group: str) -> None:
         "--system",
         f"lamindb[bionty{extra}] @ git+https://github.com/laminlabs/lamindb@main",
     )
+    session.run(
+        "uv",
+        "pip",
+        "install",
+        "--system",
+        "git+https://github.com/laminlabs/bionty@main",
+    )
 
 
 @nox.session
