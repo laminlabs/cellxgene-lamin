@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from importlib import resources
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING
 
 import bionty as bt
 import pandas as pd
@@ -75,7 +75,7 @@ def add_defaults_to_obs(
     adata: ad.AnnData,
     defaults: dict[str, str],
 ) -> None:
-    """Add missing obs columns and defaults to the obs fields."""
+    """Add missing obs columns their default values to obs."""
     added_defaults: dict = {}
     for name, default in defaults.items():
         if (
@@ -104,12 +104,10 @@ class Curate(AnnDataCurator):
     ):
         if defaults:
             add_defaults_to_obs(adata, defaults)
-        self._categoricals = categoricals
-
         super().__init__(
             data=adata,
             var_index=var_index,
-            categoricals=_restrict_obs_fields(adata, self._categoricals),
+            categoricals=_restrict_obs_fields(adata, categoricals),
             using=using,
             verbosity=verbosity,
             organism=organism,
@@ -221,7 +219,7 @@ class Curate(AnnDataCurator):
                 if mapped_column is not None:
                     adata_cxg.obs[f"{column}_ontology_term_id"] = mapped_column
 
-        # drop the name columns for ontologies
+        # drop the name columns for ontologies. cellxgene does not allow them.
         drop_columns = [
             i
             for i in adata_cxg.obs.columns
