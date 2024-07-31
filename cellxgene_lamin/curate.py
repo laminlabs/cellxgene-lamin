@@ -102,6 +102,7 @@ class Curate(AnnDataCurator):
         verbosity: str = "hint",
         organism: str | None = None,
     ):
+        self.organism = organism
         if defaults:
             _add_defaults_to_obs(adata, defaults)
         super().__init__(
@@ -112,6 +113,7 @@ class Curate(AnnDataCurator):
             verbosity=verbosity,
             organism=organism,
         )
+
         self._schema_version = "5.0.0"
         self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.0.0/schema.md"
         try:
@@ -139,7 +141,7 @@ class Curate(AnnDataCurator):
         print(f"Currently used schema version: {self._schema_version}")
         return self._pinned_ontologies
 
-    def validate(self, organism: str | None = None) -> bool:
+    def validate(self) -> bool:
         missing_obs_fields = [
             name
             for name in CellxGeneFields.OBS_FIELD_DEFAULTS.keys()
@@ -156,7 +158,7 @@ class Curate(AnnDataCurator):
             )
             return False
 
-        return super().validate(organism=organism)
+        return super().validate(organism=self.organism)
 
     def to_cellxgene_anndata(
         self, is_primary_data: bool, title: str | None = None
