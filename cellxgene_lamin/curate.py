@@ -71,11 +71,11 @@ def _restrict_obs_fields(
     return available_obs_fields
 
 
-def add_defaults_to_obs(
+def _add_defaults_to_obs(
     adata: ad.AnnData,
     defaults: dict[str, str],
 ) -> None:
-    """Add missing obs columns their default values to obs."""
+    """Add defaults to the obs fields."""
     added_defaults: dict = {}
     for name, default in defaults.items():
         if (
@@ -103,7 +103,7 @@ class Curate(AnnDataCurator):
         organism: str | None = None,
     ):
         if defaults:
-            add_defaults_to_obs(adata, defaults)
+            _add_defaults_to_obs(adata, defaults)
         super().__init__(
             data=adata,
             var_index=var_index,
@@ -140,13 +140,12 @@ class Curate(AnnDataCurator):
         return self._pinned_ontologies
 
     def validate(self, organism: str | None = None) -> bool:
-        missing_obs_fields = []
-        for name in CellxGeneFields.OBS_FIELD_DEFAULTS.keys():
-            if (
-                name not in self._adata.obs.columns
-                and f"{name}_ontology_term_id" not in self._adata.obs.columns
-            ):
-                missing_obs_fields.append(name)
+        missing_obs_fields = [
+            name
+            for name in CellxGeneFields.OBS_FIELD_DEFAULTS.keys()
+            if name not in self._adata.obs.columns
+            and f"{name}_ontology_term_id" not in self._adata.obs.columns
+        ]
 
         if len(missing_obs_fields) > 0:
             missing_obs_fields_str = ", ".join(list(missing_obs_fields))
