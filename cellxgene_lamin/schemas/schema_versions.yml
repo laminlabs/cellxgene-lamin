@@ -61,3 +61,6 @@ schema-version:
       genecode:
         human: "v44"
         mouse: "vM33"
+      ensembl:
+        human: "release-110"
+        mouse: "release-110"

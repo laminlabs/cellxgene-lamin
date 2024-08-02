@@ -10,7 +10,7 @@ from lamin_utils import logger
 from lamindb._curate import AnnDataCurator, validate_categories_in_df
 
 from .fields import CellxGeneFields
-from .schemas._schema_versions import read_schema_versions
+from .schemas._schema_versions import _read_schema_versions
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -101,6 +101,7 @@ class Curate(AnnDataCurator):
         using: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
         organism: str | None = None,
+        schema_version: str = "5.0.0",
     ):
         self.organism = organism
         if defaults:
@@ -114,8 +115,13 @@ class Curate(AnnDataCurator):
             organism=organism,
         )
 
-        self._schema_version = "5.0.0"
-        self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.0.0/schema.md"
+        if schema_version:
+            if schema_version not in {"4.0.0", "5.0.0"}:
+                raise ValueError(
+                    f"schema version {schema_version} is currently not supported."
+                )
+            self._schema_version = "5.0.0"
+            self._schema_reference = f"https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/{self._schema_version}/schema.md"
         try:
             import cellxgene_schema
 
@@ -132,9 +138,13 @@ class Curate(AnnDataCurator):
         with resources.path(
             "cellxgene_lamin.schemas", "schema_versions.yml"
         ) as schema_versions_path:
-            self._pinned_ontologies = read_schema_versions(schema_versions_path)[
+            self._pinned_ontologies = _read_schema_versions(schema_versions_path)[
                 self._schema_version
             ]
+
+    @property
+    def schema_version(self) -> str:
+        return self._schema_version
 
     @property
     def pinned_ontologies(self) -> pd.DataFrame:
