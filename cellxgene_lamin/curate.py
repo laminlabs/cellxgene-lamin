@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import re
 from importlib import resources
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 import bionty as bt
+import lamindb_setup as ln_setup
 import pandas as pd
-from lamin_utils import logger
+from lamin_utils import colors, logger
+from lamindb import Collection
 from lamindb._curate import AnnDataCurator, validate_categories_in_df
 
 from .fields import CellxGeneFields
@@ -220,7 +222,6 @@ class Curate(AnnDataCurator):
         Args:
             is_primary_data: Whether the measured data is primary data or not.
             title: Title of the AnnData object. Commonly the name of the publication.
-                   This parameter is required if the AnnData object is not a part of a Collection.
 
         Returns:
             An AnnData object which adheres to the cellxgene-schema.
