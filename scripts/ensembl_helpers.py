@@ -1,10 +1,11 @@
 import json
 import time
+from typing import Iterable
 
 import requests
 
 
-def get_ensembl_versions(ensembl_ids: list[str]) -> dict[str, int | None]:
+def get_ensembl_versions(ensembl_ids: Iterable[str]) -> dict[str, int | None]:
     base_url = "https://rest.ensembl.org"
     headers = {"Content-Type": "application/json", "User-Agent": "anonymous"}
     results = {}
