@@ -176,7 +176,6 @@ class Curate(AnnDataCurator):
         Args:
             is_primary_data: Whether the measured data is primary data or not.
             title: Title of the AnnData object. Commonly the name of the publication.
-                   This parameter is required if the AnnData object is not a part of a Collection.
 
         Returns:
             An AnnData object which adheres to the cellxgene-schema.
