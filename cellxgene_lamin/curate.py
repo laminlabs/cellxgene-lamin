@@ -171,38 +171,20 @@ class Curate(AnnDataCurator):
             ).first()
             return bt_source
 
+        # fmt: off
         sources = {}
         sources["var_index"] = _fetch_bionty_source("Gene", self.organism, "ensembl")
-        sources["gene"] = sources["gene_ontology_id"] = _fetch_bionty_source(
-            "Gene", self.organism, "ensembl"
-        )
-        sources["cell_type"] = sources["cell_type_ontology_id"] = _fetch_bionty_source(
-            "CellType", "all", "cl"
-        )
-        sources["assay"] = sources["assay_ontology_id"] = _fetch_bionty_source(
-            "ExperimentalFactor", "all", "efo"
-        )
-        sources["self_reported_ethnicity"] = sources[
-            "self_reported_ethnicity_ontology_id"
-        ] = _fetch_bionty_source("Ethnicity", self.organism, "hancestro")
+        sources["gene"] = sources["gene_ontology_id"] = _fetch_bionty_source("Gene", self.organism, "ensembl")
+        sources["cell_type"] = sources["cell_type_ontology_id"] = _fetch_bionty_source("CellType", "all", "cl")
+        sources["assay"] = sources["assay_ontology_id"] = _fetch_bionty_source("ExperimentalFactor", "all", "efo")
+        sources["self_reported_ethnicity"] = sources["self_reported_ethnicity_ontology_id"] = _fetch_bionty_source("Ethnicity", self.organism, "hancestro")
         dev_stage_ontology = "hsapdv" if self.organism == "human" else "mmusdv"
-        sources["development_stage"] = sources["development_stage_ontology_id"] = (
-            _fetch_bionty_source(
-                "DevelopmentalStage", self.organism, dev_stage_ontology
-            )
-        )
-        sources["disease"] = sources["disease_ontology_id"] = _fetch_bionty_source(
-            "Disease", "all", "mondo"
-        )
-        sources["organism"] = sources["organism_ontology_id"] = _fetch_bionty_source(
-            "Organism", "all", "ncbitaxon"
-        )
-        sources["sex"] = sources["sex_ontology_id"] = _fetch_bionty_source(
-            "Phenotype", "all", "pato"
-        )
-        sources["tissue"] = sources["tissue_ontology_id"] = _fetch_bionty_source(
-            "Tissue", "all", "uberon"
-        )
+        sources["development_stage"] = sources["development_stage_ontology_id"] = (_fetch_bionty_source("DevelopmentalStage", self.organism, dev_stage_ontology))
+        sources["disease"] = sources["disease_ontology_id"] = _fetch_bionty_source("Disease", "all", "mondo")
+        sources["organism"] = sources["organism_ontology_id"] = _fetch_bionty_source("Organism", "all", "ncbitaxon")
+        sources["sex"] = sources["sex_ontology_id"] = _fetch_bionty_source("Phenotype", "all", "pato")
+        sources["tissue"] = sources["tissue_ontology_id"] = _fetch_bionty_source("Tissue", "all", "uberon")
+        # fmt: on
 
         return sources
 
