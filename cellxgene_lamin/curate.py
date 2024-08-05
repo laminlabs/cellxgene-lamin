@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     import anndata as ad
+    from anndata import AnnData
     from lnschema_core import Record
     from lnschema_core.types import FieldAttr
 
@@ -99,12 +100,13 @@ class Curate(AnnDataCurator):
         categoricals: dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
         *,
         defaults: dict[str, str] = None,
-        using: str = "laminlabs/cellxgene",
+        using_key: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
         organism: str | None = None,
         schema_version: str = "5.0.0",
     ):
         self.organism = organism
+        self.using_key = using_key
         self.schema_version = schema_version
         self.schema_reference = f"https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/{schema_version}/schema.md"
         with resources.path(
@@ -127,7 +129,7 @@ class Curate(AnnDataCurator):
             data=adata,
             var_index=var_index,
             categoricals=_restrict_obs_fields(adata, categoricals),
-            using=using,
+            using_key=using_key,
             verbosity=verbosity,
             organism=organism,
             sources=self.sources,
@@ -137,6 +139,10 @@ class Curate(AnnDataCurator):
     def pinned_ontologies(self) -> pd.DataFrame:
         print(f"Currently used schema version: {self.schema_version}")
         return self._pinned_ontologies
+
+    @property
+    def adata(self) -> AnnData:
+        return self._adata
 
     def _create_sources(self) -> dict[str, Record]:
         """Creates a sources dictionary that can be passed to Curate (AnnDataCurator)."""
@@ -152,19 +158,19 @@ class Curate(AnnDataCurator):
             version = self._pinned_ontologies.loc[(self._pinned_ontologies.index == entity) &
                                                   (self._pinned_ontologies["organism"] == organism) &
                                                   (self._pinned_ontologies["source"] == source), "version"].iloc[0]
-            return bt.Source.filter(organism=organism, entity=f"bionty.{entity}", version=version).first()
+            return bt.Source.using(self.using_key).filter(organism=organism, entity=f"bionty.{entity}", version=version).first()
 
         entity_mapping = {
             "var_index": ("Gene", self.organism, "ensembl"),
-            "gene": ("Gene", self.organism, "ensembl"),
-            "cell_type": ("CellType", "all", "cl"),
-            "assay": ("ExperimentalFactor", "all", "efo"),
-            "self_reported_ethnicity": ("Ethnicity", self.organism, "hancestro"),
-            "development_stage": ("DevelopmentalStage", self.organism, "hsapdv" if self.organism == "human" else "mmusdv"),
-            "disease": ("Disease", "all", "mondo"),
-            "organism": ("Organism", "all", "ncbitaxon"),
-            "sex": ("Phenotype", "all", "pato"),
-            "tissue": ("Tissue", "all", "uberon"),
+            # "gene": ("Gene", self.organism, "ensembl"),
+            # "cell_type": ("CellType", "all", "cl"),
+            # "assay": ("ExperimentalFactor", "all", "efo"),
+            # "self_reported_ethnicity": ("Ethnicity", self.organism, "hancestro"),
+            # "development_stage": ("DevelopmentalStage", self.organism, "hsapdv" if self.organism == "human" else "mmusdv"),
+            # "disease": ("Disease", "all", "mondo"),
+            # "organism": ("Organism", "all", "ncbitaxon"),
+            # "sex": ("Phenotype", "all", "pato"),
+            # "tissue": ("Tissue", "all", "uberon"),
         }
         # fmt: on
 
@@ -217,7 +223,7 @@ class Curate(AnnDataCurator):
             validate_categories_in_df(
                 df=self._adata.obs,
                 fields=self.categoricals,
-                using=self._using,
+                using_key=self.using_key,
             )
 
         adata_cxg = self._adata.copy()
