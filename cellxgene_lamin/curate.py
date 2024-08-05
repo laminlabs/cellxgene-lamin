@@ -2,13 +2,11 @@ from __future__ import annotations
 
 import re
 from importlib import resources
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 import bionty as bt
-import lamindb_setup as ln_setup
 import pandas as pd
-from lamin_utils import colors, logger
-from lamindb import Collection
+from lamin_utils import logger
 from lamindb._curate import AnnDataCurator, validate_categories_in_df
 
 from .fields import CellxGeneFields
@@ -109,30 +107,21 @@ class Curate(AnnDataCurator):
         self.organism = organism
         self.schema_version = schema_version
         self.schema_reference = f"https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/{schema_version}/schema.md"
-        try:
-            import cellxgene_schema
-
-            major_minor_installed = cellxgene_schema.__version__.rsplit(".", 1)[0]
-            major_minor_expected = self.schema_version.rsplit(".", 1)[0]
-
-            if major_minor_installed != major_minor_expected:
-                logger.warn(
-                    f"installed cellxgene-schema version {cellxgene_schema.__version__} does not match expected major and minor version {self.schema_version}"
-                )
-        except ImportError:
-            pass
-
         with resources.path(
             "cellxgene_lamin.schemas", "schema_versions.yml"
         ) as schema_versions_path:
             self._pinned_ontologies = _read_schema_versions(schema_versions_path)[
                 self.schema_version
             ]
+        self.sources = self._create_sources()
+        self.sources = {
+            entity: source
+            for entity, source in self.sources.items()
+            if source is not None
+        }
 
         if defaults:
             _add_defaults_to_obs(adata, defaults)
-
-        self.sources = self._create_sources()
 
         super().__init__(
             data=adata,
@@ -141,7 +130,7 @@ class Curate(AnnDataCurator):
             using=using,
             verbosity=verbosity,
             organism=organism,
-            # sources=sources
+            sources=self.sources,
         )
 
     @property
@@ -151,8 +140,6 @@ class Curate(AnnDataCurator):
 
     def _create_sources(self) -> dict[str, Record]:
         """Creates a sources dictionary that can be passed to Curate (AnnDataCurator)."""
-        # TODO Ensures that we don't set the sources to a value if we can't find the corresponding version
-        # TODO alternatively just get all versions into a dict and then pick them
 
         def _fetch_bionty_source(
             entity: str, organism: str, source: str
@@ -161,34 +148,43 @@ class Curate(AnnDataCurator):
 
             Returns None if the source does not exist.
             """
-            df = self._pinned_ontologies
-            version = df.loc[
-                (df.index == entity)
-                & (df["organism"] == organism)
-                & (df["source"] == source),
+            version = self._pinned_ontologies.loc[
+                (self._pinned_ontologies.index == entity)
+                & (self._pinned_ontologies["organism"] == organism)
+                & (self._pinned_ontologies["source"] == source),
                 "version",
-            ].values[0]
-            bt_source = bt.Source.filter(
+            ].iloc[0]
+            return bt.Source.filter(
                 organism=organism, entity=f"bionty.{entity}", version=version
             ).first()
-            return bt_source
 
-        # fmt: off
-        sources = {}
-        sources["var_index"] = _fetch_bionty_source("Gene", self.organism, "ensembl")
-        sources["gene"] = sources["gene_ontology_id"] = _fetch_bionty_source("Gene", self.organism, "ensembl")
-        sources["cell_type"] = sources["cell_type_ontology_id"] = _fetch_bionty_source("CellType", "all", "cl")
-        sources["assay"] = sources["assay_ontology_id"] = _fetch_bionty_source("ExperimentalFactor", "all", "efo")
-        sources["self_reported_ethnicity"] = sources["self_reported_ethnicity_ontology_id"] = _fetch_bionty_source("Ethnicity", self.organism, "hancestro")
-        dev_stage_ontology = "hsapdv" if self.organism == "human" else "mmusdv"
-        sources["development_stage"] = sources["development_stage_ontology_id"] = (_fetch_bionty_source("DevelopmentalStage", self.organism, dev_stage_ontology))
-        sources["disease"] = sources["disease_ontology_id"] = _fetch_bionty_source("Disease", "all", "mondo")
-        sources["organism"] = sources["organism_ontology_id"] = _fetch_bionty_source("Organism", "all", "ncbitaxon")
-        sources["sex"] = sources["sex_ontology_id"] = _fetch_bionty_source("Phenotype", "all", "pato")
-        sources["tissue"] = sources["tissue_ontology_id"] = _fetch_bionty_source("Tissue", "all", "uberon")
-        # fmt: on
+        # fmt off
+        entity_mapping = {
+            "var_index": ("Gene", self.organism, "ensembl"),
+            "gene": ("Gene", self.organism, "ensembl"),
+            "cell_type": ("CellType", "all", "cl"),
+            "assay": ("ExperimentalFactor", "all", "efo"),
+            "self_reported_ethnicity": ("Ethnicity", self.organism, "hancestro"),
+            "development_stage": (
+                "DevelopmentalStage",
+                self.organism,
+                "hsapdv" if self.organism == "human" else "mmusdv",
+            ),
+            "disease": ("Disease", "all", "mondo"),
+            "organism": ("Organism", "all", "ncbitaxon"),
+            "sex": ("Phenotype", "all", "pato"),
+            "tissue": ("Tissue", "all", "uberon"),
+        }
+        # fmt on
 
-        return sources
+        return {
+            entity_key: source_obj
+            for entity, entity_params in entity_mapping.items()
+            for entity_key, source_obj in [
+                (entity, _fetch_bionty_source(*entity_params)),
+                (f"{entity}_ontology_id", _fetch_bionty_source(*entity_params)),
+            ]
+        }
 
     def validate(self) -> bool:
         missing_obs_fields = [
