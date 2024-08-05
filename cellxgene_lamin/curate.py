@@ -184,6 +184,8 @@ class Curate(AnnDataCurator):
         }
 
     def validate(self) -> bool:
+        """Validates the AnnData object against most cellxgene requirements."""
+        # Verify that all required obs columns are present
         missing_obs_fields = [
             name
             for name in CellxGeneFields.OBS_FIELD_DEFAULTS.keys()
@@ -200,34 +202,7 @@ class Curate(AnnDataCurator):
             )
             return False
 
-        return super().validate(organism=self.organism)
-
-    def to_cellxgene_anndata(
-        self, is_primary_data: bool, title: str | None = None
-    ) -> ad.AnnData:
-        """Converts the AnnData object to the cellxgene-schema input format.
-
-        cellxgene expects the obs fields to be {entity}_ontology_id fields and has many further requirements which are
-        documented here: https://github.com/chanzuckerberg/single-cell-curation/tree/main/schema.
-        This function checks for most but not all requirements of the CELLxGENE schema.
-        If you want to ensure that it fully adheres to the CELLxGENE schema, run `cellxgene-schema` on the AnnData object.
-
-        Args:
-            is_primary_data: Whether the measured data is primary data or not.
-            title: Title of the AnnData object. Commonly the name of the publication.
-
-        Returns:
-            An AnnData object which adheres to the cellxgene-schema.
-        """
-        if self._validated is None:
-            validate_categories_in_df(
-                df=self._adata.obs,
-                fields=self.categoricals,
-                using_key=self.using_key,
-            )
-
-        adata_cxg = self._adata.copy()
-
+        # Verify that no cellxgene reserved names are present
         reserved_names = {
             "ethnicity",
             "ethnicity_ontology_term_id",
@@ -248,9 +223,62 @@ class Curate(AnnDataCurator):
         ]
         if len(matched_columns) > 0:
             raise ValueError(
-                f"AnnData must not contain obs columns {matched_columns} which are"
+                f"AnnData object must not contain obs columns {matched_columns} which are"
                 " reserved from previous schema versions."
             )
+
+        return super().validate(organism=self.organism)
+
+    def to_cellxgene_anndata(
+        self, is_primary_data: bool, title: str | None = None
+    ) -> ad.AnnData:
+        """Converts the AnnData object to the cellxgene-schema input format.
+
+        cellxgene expects the obs fields to be {entity}_ontology_id fields and has many further requirements which are
+        documented here: https://github.com/chanzuckerberg/single-cell-curation/tree/main/schema.
+        This function checks for most but not all requirements of the CELLxGENE schema.
+        If you want to ensure that it fully adheres to the CELLxGENE schema, run `cellxgene-schema` on the AnnData object.
+
+        Removes any genes that are not yet validated.
+
+        Args:
+            is_primary_data: Whether the measured data is primary data or not.
+            title: Title of the AnnData object. Commonly the name of the publication.
+
+        Returns:
+            An AnnData object which adheres to the cellxgene-schema.
+        """
+        if self._validated is None:
+            validate_categories_in_df(
+                df=self._adata.obs,
+                fields=self.categoricals,
+                using_key=self.using_key,
+            )
+
+        # Create a copy since we modify the AnnData object extensively
+        adata_cxg = self._adata.copy()
+
+        # Remove any unvalidated genes from the index to ensure that the cellxgene-schema CLI passes
+        var_names_inspection = bt.Gene.using("laminlabs/cellxgene").inspect(
+            adata_cxg.var_names,
+            field="ensembl_gene_id",
+            organism="human",
+            source=self.sources["var_index"],
+            mute=True,
+        )
+        if len(var_names_inspection.non_validated) > 0:
+            logger.info(
+                f"removing {len(var_names_inspection.non_validated)} non-validated genes."
+            )
+            adata_cxg = adata_cxg[
+                :, ~adata_cxg.var_names.isin(var_names_inspection.non_validated)
+            ].copy()
+            if adata_cxg.raw is not None:
+                raw_data = adata_cxg.raw.to_adata()
+                raw_data = raw_data[
+                    :, ~raw_data.var_names.isin(var_names_inspection.non_validated)
+                ].copy()
+                adata_cxg.raw = raw_data
 
         # convert name column to ontology_term_id column
         for column in adata_cxg.obs.columns:
@@ -269,6 +297,7 @@ class Curate(AnnDataCurator):
         ]
         adata_cxg.obs.drop(columns=drop_columns, inplace=True)
 
+        # Add cellxgene metadata to AnnData object
         if "is_primary_data" not in adata_cxg.obs.columns:
             adata_cxg.obs["is_primary_data"] = is_primary_data
         if "feature_is_filtered" not in adata_cxg.var.columns:
@@ -287,6 +316,8 @@ class Curate(AnnDataCurator):
         adata_cxg.uns["cxg_lamin_schema_reference"] = self.schema_reference
         adata_cxg.uns["cxg_lamin_schema_version"] = self.schema_version
 
+        # cellxgene requires an embedding
+        # TODO consider moving this to validate
         embedding_pattern = r"^[a-zA-Z][a-zA-Z0-9_.-]*$"
         exclude_key = "spatial"
         matching_keys = [
