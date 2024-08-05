@@ -141,6 +141,7 @@ class Curate(AnnDataCurator):
     def _create_sources(self) -> dict[str, Record]:
         """Creates a sources dictionary that can be passed to Curate (AnnDataCurator)."""
 
+        # fmt: off
         def _fetch_bionty_source(
             entity: str, organism: str, source: str
         ) -> bt.Source | None:
@@ -148,34 +149,24 @@ class Curate(AnnDataCurator):
 
             Returns None if the source does not exist.
             """
-            version = self._pinned_ontologies.loc[
-                (self._pinned_ontologies.index == entity)
-                & (self._pinned_ontologies["organism"] == organism)
-                & (self._pinned_ontologies["source"] == source),
-                "version",
-            ].iloc[0]
-            return bt.Source.filter(
-                organism=organism, entity=f"bionty.{entity}", version=version
-            ).first()
+            version = self._pinned_ontologies.loc[(self._pinned_ontologies.index == entity) &
+                                                  (self._pinned_ontologies["organism"] == organism) &
+                                                  (self._pinned_ontologies["source"] == source), "version"].iloc[0]
+            return bt.Source.filter(organism=organism, entity=f"bionty.{entity}", version=version).first()
 
-        # fmt off
         entity_mapping = {
             "var_index": ("Gene", self.organism, "ensembl"),
             "gene": ("Gene", self.organism, "ensembl"),
             "cell_type": ("CellType", "all", "cl"),
             "assay": ("ExperimentalFactor", "all", "efo"),
             "self_reported_ethnicity": ("Ethnicity", self.organism, "hancestro"),
-            "development_stage": (
-                "DevelopmentalStage",
-                self.organism,
-                "hsapdv" if self.organism == "human" else "mmusdv",
-            ),
+            "development_stage": ("DevelopmentalStage", self.organism, "hsapdv" if self.organism == "human" else "mmusdv"),
             "disease": ("Disease", "all", "mondo"),
             "organism": ("Organism", "all", "ncbitaxon"),
             "sex": ("Phenotype", "all", "pato"),
             "tissue": ("Tissue", "all", "uberon"),
         }
-        # fmt on
+        # fmt: on
 
         return {
             entity_key: source_obj
