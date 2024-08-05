@@ -52,6 +52,13 @@ def install(session: nox.Session, group: str) -> None:
         "pip",
         "install",
         "--system",
+        "lnschema-core @ git+https://github.com/laminlabs/lnschema-core@main",
+    )
+    session.run(
+        "uv",
+        "pip",
+        "install",
+        "--system",
         "lamindb_setup @ git+https://github.com/laminlabs/lamindb-setup@main",
     )
 
