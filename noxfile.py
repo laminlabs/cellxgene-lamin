@@ -3,7 +3,13 @@ from pathlib import Path
 
 import nox
 from laminci import upload_docs_artifact
-from laminci.nox import build_docs, install_lamindb, login_testuser1, run_pre_commit
+from laminci.nox import (
+    build_docs,
+    install_lamindb,
+    login_testuser1,
+    run,
+    run_pre_commit,
+)
 
 nox.options.default_venv_backend = "none"
 
@@ -25,15 +31,15 @@ def lint(session: nox.Session) -> None:
 )
 def install(session: nox.Session, group: str) -> None:
     extras = ""
-    session.run(*"uv pip install --system scipy>=1.12.0,<1.13.0rc1".split())
+    run(session, "uv pip install --system scipy>=1.12.0,<1.13.0rc1")
     if group == "census":
-        extras = ",jupyter,aws"
-        session.run(*"uv pip install --system tiledbsoma".split())
+        extras = "bionty,jupyter,aws"
+        run(session, "uv pip install --system tiledbsoma")
     elif group == "validator":
-        extras = ",jupyter,aws,zarr"
-        session.run(*"uv pip install --system cellxgene-schema==5.0.2".split())
+        extras = "bionty,jupyter,aws,zarr"
+        run(session, "uv pip install --system cellxgene-schema==5.0.2")
     install_lamindb(session, branch="main", extras=extras)
-    session.run(*"uv pip install --system .[dev]".split())
+    run(session, "uv pip install --system .[dev]")
 
 
 @nox.session
@@ -44,7 +50,7 @@ def install(session: nox.Session, group: str) -> None:
 @nox.session
 def build(session, group):
     login_testuser1(session)
-    session.run(*f"pytest -s ./tests/test_notebooks.py::test_{group}".split())
+    run(session, f"pytest -s ./tests/test_notebooks.py::test_{group}")
 
     # Move executed notebooks temporarily to recover them for docs building
     target_dir = Path(f"./docs_{group}")
@@ -60,6 +66,6 @@ def docs(session):
         for path in Path(f"./docs_{group}").glob("*"):
             path.rename(f"./docs/{path.name}")
 
-    session.run(*"lamin init --storage ./docsbuild --schema bionty".split())
+    run(session, "lamin init --storage ./docsbuild --schema bionty")
     build_docs(session, strict=True)
     upload_docs_artifact(aws=True)
