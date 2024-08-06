@@ -101,7 +101,7 @@ class Curate(AnnDataCurator):
         categoricals: dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
         *,
         defaults: dict[str, str] = None,
-        using: str = "laminlabs/cellxgene",
+        using_key: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
         organism: str | None = None,
     ):
@@ -112,7 +112,7 @@ class Curate(AnnDataCurator):
             data=adata,
             var_index=var_index,
             categoricals=_restrict_obs_fields(adata, categoricals),
-            using=using,
+            using_key=using_key,
             verbosity=verbosity,
             organism=organism,
         )
@@ -184,7 +184,7 @@ class Curate(AnnDataCurator):
             validate_categories_in_df(
                 df=self._adata.obs,
                 fields=self.categoricals,
-                using=self._using,
+                using_key=self._using,
             )
 
         adata_cxg = self._adata.copy()
