@@ -258,28 +258,6 @@ class Curate(AnnDataCurator):
         # Create a copy since we modify the AnnData object extensively
         adata_cxg = self._adata.copy()
 
-        # Remove any unvalidated genes from the index to ensure that the cellxgene-schema CLI passes
-        var_names_inspection = bt.Gene.using("laminlabs/cellxgene").inspect(
-            adata_cxg.var_names,
-            field="ensembl_gene_id",
-            organism="human",
-            source=self.sources["var_index"],
-            mute=True,
-        )
-        if len(var_names_inspection.non_validated) > 0:
-            logger.info(
-                f"removing {len(var_names_inspection.non_validated)} non-validated genes."
-            )
-            adata_cxg = adata_cxg[
-                :, ~adata_cxg.var_names.isin(var_names_inspection.non_validated)
-            ].copy()
-            if adata_cxg.raw is not None:
-                raw_data = adata_cxg.raw.to_adata()
-                raw_data = raw_data[
-                    :, ~raw_data.var_names.isin(var_names_inspection.non_validated)
-                ].copy()
-                adata_cxg.raw = raw_data
-
         # convert name column to ontology_term_id column
         for column in adata_cxg.obs.columns:
             if column in self.categoricals and not column.endswith("_ontology_term_id"):
