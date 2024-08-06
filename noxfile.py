@@ -3,7 +3,7 @@ from pathlib import Path
 
 import nox
 from laminci import upload_docs_artifact
-from laminci.nox import build_docs, login_testuser1, run_pre_commit
+from laminci.nox import build_docs, install_lamindb, login_testuser1, run_pre_commit
 
 nox.options.default_venv_backend = "none"
 
@@ -24,36 +24,16 @@ def lint(session: nox.Session) -> None:
     ["census", "validator", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
-    extra = ""
+    extras = ""
     session.run(*"uv pip install --system scipy>=1.12.0,<1.13.0rc1".split())
     if group == "census":
-        extra = ",jupyter,aws"
+        extras = ",jupyter,aws"
         session.run(*"uv pip install --system tiledbsoma".split())
     elif group == "validator":
-        extra = ",jupyter,aws,zarr"
+        extras = ",jupyter,aws,zarr"
         session.run(*"uv pip install --system cellxgene-schema==5.0.2".split())
-    session.run(
-        "uv",
-        "pip",
-        "install",
-        "--system",
-        f"lamindb[bionty{extra}] @ git+https://github.com/laminlabs/lamindb@main",
-    )
+    install_lamindb(session, branch="main", extras=extras)
     session.run(*"uv pip install --system .[dev]".split())
-    session.run(
-        "uv",
-        "pip",
-        "install",
-        "--system",
-        "bionty @ git+https://github.com/laminlabs/bionty@main",
-    )
-    session.run(
-        "uv",
-        "pip",
-        "install",
-        "--system",
-        "lamindb_setup @ git+https://github.com/laminlabs/lamindb-setup@main",
-    )
 
 
 @nox.session
