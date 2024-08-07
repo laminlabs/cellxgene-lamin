@@ -105,6 +105,9 @@ class Curate(AnnDataCurator):
         organism: str | None = None,
         schema_version: Literal["4.0.0", "5.0.0"] = "5.0.0",
     ):
+        self.organism = organism
+        self.using_key = using_key
+
         VALID_SCHEMA_VERSIONS = {"4.0.0", "5.0.0"}
         if schema_version not in VALID_SCHEMA_VERSIONS:
             valid_versions = ", ".join(sorted(VALID_SCHEMA_VERSIONS))
@@ -129,9 +132,6 @@ class Curate(AnnDataCurator):
 
         if defaults:
             _add_defaults_to_obs(adata, defaults)
-
-        self.organism = organism
-        self.using_key = using_key
 
         super().__init__(
             data=adata,
