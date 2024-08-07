@@ -105,8 +105,13 @@ class Curate(AnnDataCurator):
         organism: str | None = None,
         schema_version: Literal["4.0.0", "5.0.0"] = "5.0.0",
     ):
-        self.organism = organism
-        self.using_key = using_key
+        VALID_SCHEMA_VERSIONS = {"4.0.0", "5.0.0"}
+        if schema_version not in VALID_SCHEMA_VERSIONS:
+            valid_versions = ", ".join(sorted(VALID_SCHEMA_VERSIONS))
+            raise ValueError(
+                f"Invalid schema_version: {schema_version}. "
+                f"Valid versions are: {valid_versions}"
+            )
         self.schema_version = schema_version
         self.schema_reference = f"https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/{schema_version}/schema.md"
         with resources.path(
@@ -124,6 +129,9 @@ class Curate(AnnDataCurator):
 
         if defaults:
             _add_defaults_to_obs(adata, defaults)
+
+        self.organism = organism
+        self.using_key = using_key
 
         super().__init__(
             data=adata,
@@ -146,7 +154,7 @@ class Curate(AnnDataCurator):
         return self._adata
 
     def _create_sources(self) -> dict[str, Record]:
-        """Creates a sources dictionary that can be passed to Curate (AnnDataCurator)."""
+        """Creates a sources dictionary that can be passed to AnnDataCurator."""
 
         # fmt: off
         def _fetch_bionty_source(
@@ -228,6 +236,19 @@ class Curate(AnnDataCurator):
                 " reserved from previous schema versions."
             )
 
+        # cellxgene requires an embedding
+        embedding_pattern = r"^[a-zA-Z][a-zA-Z0-9_.-]*$"
+        exclude_key = "spatial"
+        matching_keys = [
+            key
+            for key in self._adata.obsm.keys()
+            if re.match(embedding_pattern, key) and key != exclude_key
+        ]
+        if len(matching_keys) == 0:
+            raise ValueError(
+                "Unable to find an embedding key. Please calculate an embedding."
+            )
+
         return super().validate(organism=self.organism)
 
     def to_cellxgene_anndata(
@@ -240,8 +261,6 @@ class Curate(AnnDataCurator):
         This function checks for most but not all requirements of the CELLxGENE schema.
         If you want to ensure that it fully adheres to the CELLxGENE schema, run `cellxgene-schema` on the AnnData object.
 
-        Removes any genes that are not yet validated.
-
         Args:
             is_primary_data: Whether the measured data is primary data or not.
             title: Title of the AnnData object. Commonly the name of the publication.
@@ -249,13 +268,6 @@ class Curate(AnnDataCurator):
         Returns:
             An AnnData object which adheres to the cellxgene-schema.
         """
-        if self._validated is None:
-            validate_categories_in_df(
-                df=self._adata.obs,
-                fields=self.categoricals,
-                using_key=self.using_key,
-            )
-
         # Create a copy since we modify the AnnData object extensively
         adata_cxg = self._adata.copy()
 
@@ -294,19 +306,5 @@ class Curate(AnnDataCurator):
             adata_cxg.uns["title"] = self._collection.name
         adata_cxg.uns["cxg_lamin_schema_reference"] = self.schema_reference
         adata_cxg.uns["cxg_lamin_schema_version"] = self.schema_version
-
-        # cellxgene requires an embedding
-        # TODO consider moving this to validate
-        embedding_pattern = r"^[a-zA-Z][a-zA-Z0-9_.-]*$"
-        exclude_key = "spatial"
-        matching_keys = [
-            key
-            for key in adata_cxg.obsm.keys()
-            if re.match(embedding_pattern, key) and key != exclude_key
-        ]
-        if len(matching_keys) == 0:
-            raise ValueError(
-                "Unable to find an embedding key. Please calculate an embedding."
-            )
 
         return adata_cxg
