@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from importlib import resources
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import bionty as bt
 import pandas as pd
@@ -103,7 +103,7 @@ class Curate(AnnDataCurator):
         using_key: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
         organism: str | None = None,
-        schema_version: str = "5.0.0",
+        schema_version: Literal["4.0.0", "5.0.0"] = "5.0.0",
     ):
         self.organism = organism
         self.using_key = using_key
@@ -133,6 +133,7 @@ class Curate(AnnDataCurator):
             verbosity=verbosity,
             organism=organism,
             sources=self.sources,
+            exclude=CellxGeneFields.OBS_FIELD_DEFAULTS,
         )
 
     @property
@@ -162,15 +163,15 @@ class Curate(AnnDataCurator):
 
         entity_mapping = {
             "var_index": ("Gene", self.organism, "ensembl"),
-            # "gene": ("Gene", self.organism, "ensembl"),
-            # "cell_type": ("CellType", "all", "cl"),
-            # "assay": ("ExperimentalFactor", "all", "efo"),
-            # "self_reported_ethnicity": ("Ethnicity", self.organism, "hancestro"),
-            # "development_stage": ("DevelopmentalStage", self.organism, "hsapdv" if self.organism == "human" else "mmusdv"),
-            # "disease": ("Disease", "all", "mondo"),
-            # "organism": ("Organism", "all", "ncbitaxon"),
-            # "sex": ("Phenotype", "all", "pato"),
-            # "tissue": ("Tissue", "all", "uberon"),
+             "gene": ("Gene", self.organism, "ensembl"),
+             "cell_type": ("CellType", "all", "cl"),
+             "assay": ("ExperimentalFactor", "all", "efo"),
+             "self_reported_ethnicity": ("Ethnicity", self.organism, "hancestro"),
+             "development_stage": ("DevelopmentalStage", self.organism, "hsapdv" if self.organism == "human" else "mmusdv"),
+             "disease": ("Disease", "all", "mondo"),
+             "organism": ("Organism", "vertebrates", "ensembl"),
+             "sex": ("Phenotype", "all", "pato"),
+             "tissue": ("Tissue", "all", "uberon"),
         }
         # fmt: on
 

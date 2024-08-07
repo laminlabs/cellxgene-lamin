@@ -51,6 +51,8 @@ schema-version:
     Organism:
       ncbitaxon:
         all: "2023-06-20"
+      ensembl:
+        vertebrates: "release-110"
     Phenotype:
       pato:
         all: "2023-05-18"
