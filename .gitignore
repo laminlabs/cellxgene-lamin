@@ -111,4 +111,11 @@ test-cellxgene/
 *.lndb
 *.h5ad
 *.lamindb
+
+# Convenience
 test.ipynb
+
+# cxg
+genes_homo_sapiens.csv
+genes_mus_musculus.csv
+genes_sars_cov_2.csv

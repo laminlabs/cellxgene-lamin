@@ -2,23 +2,22 @@ from __future__ import annotations
 
 import re
 from importlib import resources
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Literal
 
 import bionty as bt
-import lamindb_setup as ln_setup
 import pandas as pd
-from lamin_utils import colors, logger
-from lamindb import Collection
+from lamin_utils import logger
 from lamindb._curate import AnnDataCurator, validate_categories_in_df
 
 from .fields import CellxGeneFields
-from .schemas._schema_versions import read_schema_versions
+from .schemas._schema_versions import _read_schema_versions
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     import anndata as ad
-    from lamindb import Artifact
+    from anndata import AnnData
+    from lnschema_core import Record
     from lnschema_core.types import FieldAttr
 
 
@@ -104,10 +103,36 @@ class Curate(AnnDataCurator):
         using_key: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
         organism: str | None = None,
+        schema_version: Literal["4.0.0", "5.0.0"] = "5.0.0",
     ):
         self.organism = organism
+        self.using_key = using_key
+
+        VALID_SCHEMA_VERSIONS = {"4.0.0", "5.0.0"}
+        if schema_version not in VALID_SCHEMA_VERSIONS:
+            valid_versions = ", ".join(sorted(VALID_SCHEMA_VERSIONS))
+            raise ValueError(
+                f"Invalid schema_version: {schema_version}. "
+                f"Valid versions are: {valid_versions}"
+            )
+        self.schema_version = schema_version
+        self.schema_reference = f"https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/{schema_version}/schema.md"
+        with resources.path(
+            "cellxgene_lamin.schemas", "schema_versions.yml"
+        ) as schema_versions_path:
+            self._pinned_ontologies = _read_schema_versions(schema_versions_path)[
+                self.schema_version
+            ]
+        self.sources = self._create_sources()
+        self.sources = {
+            entity: source
+            for entity, source in self.sources.items()
+            if source is not None
+        }
+
         if defaults:
             _add_defaults_to_obs(adata, defaults)
+
         super().__init__(
             data=adata,
             var_index=var_index,
@@ -115,36 +140,61 @@ class Curate(AnnDataCurator):
             using_key=using_key,
             verbosity=verbosity,
             organism=organism,
+            sources=self.sources,
+            exclude=CellxGeneFields.OBS_FIELD_DEFAULTS,
         )
-
-        self._schema_version = "5.0.0"
-        self._schema_reference = "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.0.0/schema.md"
-        try:
-            import cellxgene_schema
-
-            major_minor_installed = cellxgene_schema.__version__.rsplit(".", 1)[0]
-            major_minor_expected = self._schema_version.rsplit(".", 1)[0]
-
-            if major_minor_installed != major_minor_expected:
-                logger.warn(
-                    f"installed cellxgene-schema version {cellxgene_schema.__version__} does not match expected major and minor version {self._schema_version}"
-                )
-        except ImportError:
-            pass
-
-        with resources.path(
-            "cellxgene_lamin.schemas", "schema_versions.yml"
-        ) as schema_versions_path:
-            self._pinned_ontologies = read_schema_versions(schema_versions_path)[
-                self._schema_version
-            ]
 
     @property
     def pinned_ontologies(self) -> pd.DataFrame:
-        print(f"Currently used schema version: {self._schema_version}")
+        print(f"Currently used schema version: {self.schema_version}")
         return self._pinned_ontologies
 
+    @property
+    def adata(self) -> AnnData:
+        return self._adata
+
+    def _create_sources(self) -> dict[str, Record]:
+        """Creates a sources dictionary that can be passed to AnnDataCurator."""
+
+        # fmt: off
+        def _fetch_bionty_source(
+            entity: str, organism: str, source: str
+        ) -> bt.Source | None:
+            """Fetch the Bionty source of the pinned ontology.
+
+            Returns None if the source does not exist.
+            """
+            version = self._pinned_ontologies.loc[(self._pinned_ontologies.index == entity) &
+                                                  (self._pinned_ontologies["organism"] == organism) &
+                                                  (self._pinned_ontologies["source"] == source), "version"].iloc[0]
+            return bt.Source.using(self.using_key).filter(organism=organism, entity=f"bionty.{entity}", version=version).first()
+
+        entity_mapping = {
+            "var_index": ("Gene", self.organism, "ensembl"),
+             "gene": ("Gene", self.organism, "ensembl"),
+             "cell_type": ("CellType", "all", "cl"),
+             "assay": ("ExperimentalFactor", "all", "efo"),
+             "self_reported_ethnicity": ("Ethnicity", self.organism, "hancestro"),
+             "development_stage": ("DevelopmentalStage", self.organism, "hsapdv" if self.organism == "human" else "mmusdv"),
+             "disease": ("Disease", "all", "mondo"),
+             "organism": ("Organism", "vertebrates", "ensembl"),
+             "sex": ("Phenotype", "all", "pato"),
+             "tissue": ("Tissue", "all", "uberon"),
+        }
+        # fmt: on
+
+        return {
+            entity_key: source_obj
+            for entity, entity_params in entity_mapping.items()
+            for entity_key, source_obj in [
+                (entity, _fetch_bionty_source(*entity_params)),
+                (f"{entity}_ontology_id", _fetch_bionty_source(*entity_params)),
+            ]
+        }
+
     def validate(self) -> bool:
+        """Validates the AnnData object against most cellxgene requirements."""
+        # Verify that all required obs columns are present
         missing_obs_fields = [
             name
             for name in CellxGeneFields.OBS_FIELD_DEFAULTS.keys()
@@ -161,34 +211,7 @@ class Curate(AnnDataCurator):
             )
             return False
 
-        return super().validate(organism=self.organism)
-
-    def to_cellxgene_anndata(
-        self, is_primary_data: bool, title: str | None = None
-    ) -> ad.AnnData:
-        """Converts the AnnData object to the cellxgene-schema input format.
-
-        cellxgene expects the obs fields to be {entity}_ontology_id fields and has many further requirements which are
-        documented here: https://github.com/chanzuckerberg/single-cell-curation/tree/main/schema.
-        This function checks for most but not all requirements of the CELLxGENE schema.
-        If you want to ensure that it fully adheres to the CELLxGENE schema, run `cellxgene-schema` on the AnnData object.
-
-        Args:
-            is_primary_data: Whether the measured data is primary data or not.
-            title: Title of the AnnData object. Commonly the name of the publication.
-
-        Returns:
-            An AnnData object which adheres to the cellxgene-schema.
-        """
-        if self._validated is None:
-            validate_categories_in_df(
-                df=self._adata.obs,
-                fields=self.categoricals,
-                using_key=self._using,
-            )
-
-        adata_cxg = self._adata.copy()
-
+        # Verify that no cellxgene reserved names are present
         reserved_names = {
             "ethnicity",
             "ethnicity_ontology_term_id",
@@ -209,9 +232,44 @@ class Curate(AnnDataCurator):
         ]
         if len(matched_columns) > 0:
             raise ValueError(
-                f"AnnData must not contain obs columns {matched_columns} which are"
+                f"AnnData object must not contain obs columns {matched_columns} which are"
                 " reserved from previous schema versions."
             )
+
+        # cellxgene requires an embedding
+        embedding_pattern = r"^[a-zA-Z][a-zA-Z0-9_.-]*$"
+        exclude_key = "spatial"
+        matching_keys = [
+            key
+            for key in self._adata.obsm.keys()
+            if re.match(embedding_pattern, key) and key != exclude_key
+        ]
+        if len(matching_keys) == 0:
+            raise ValueError(
+                "Unable to find an embedding key. Please calculate an embedding."
+            )
+
+        return super().validate(organism=self.organism)
+
+    def to_cellxgene_anndata(
+        self, is_primary_data: bool, title: str | None = None
+    ) -> ad.AnnData:
+        """Converts the AnnData object to the cellxgene-schema input format.
+
+        cellxgene expects the obs fields to be {entity}_ontology_id fields and has many further requirements which are
+        documented here: https://github.com/chanzuckerberg/single-cell-curation/tree/main/schema.
+        This function checks for most but not all requirements of the CELLxGENE schema.
+        If you want to ensure that it fully adheres to the CELLxGENE schema, run `cellxgene-schema` on the AnnData object.
+
+        Args:
+            is_primary_data: Whether the measured data is primary data or not.
+            title: Title of the AnnData object. Commonly the name of the publication.
+
+        Returns:
+            An AnnData object which adheres to the cellxgene-schema.
+        """
+        # Create a copy since we modify the AnnData object extensively
+        adata_cxg = self._adata.copy()
 
         # convert name column to ontology_term_id column
         for column in adata_cxg.obs.columns:
@@ -230,6 +288,7 @@ class Curate(AnnDataCurator):
         ]
         adata_cxg.obs.drop(columns=drop_columns, inplace=True)
 
+        # Add cellxgene metadata to AnnData object
         if "is_primary_data" not in adata_cxg.obs.columns:
             adata_cxg.obs["is_primary_data"] = is_primary_data
         if "feature_is_filtered" not in adata_cxg.var.columns:
@@ -245,19 +304,7 @@ class Curate(AnnDataCurator):
                 adata_cxg.uns["title"] = title
         else:
             adata_cxg.uns["title"] = self._collection.name
-        adata_cxg.uns["cxg_lamin_schema_reference"] = self._schema_reference
-        adata_cxg.uns["cxg_lamin_schema_version"] = self._schema_version
-
-        embedding_pattern = r"^[a-zA-Z][a-zA-Z0-9_.-]*$"
-        exclude_key = "spatial"
-        matching_keys = [
-            key
-            for key in adata_cxg.obsm.keys()
-            if re.match(embedding_pattern, key) and key != exclude_key
-        ]
-        if len(matching_keys) == 0:
-            raise ValueError(
-                "Unable to find an embedding key. Please calculate an embedding."
-            )
+        adata_cxg.uns["cxg_lamin_schema_reference"] = self.schema_reference
+        adata_cxg.uns["cxg_lamin_schema_version"] = self.schema_version
 
         return adata_cxg
