@@ -1,6 +1,6 @@
 from typing import Iterable, Optional
 
-from lnschema_bionty.models import PublicSource, Registry
+from bionty.models import PublicSource, Registry
 
 from ._features import FEATURE_TO_ACCESSOR, OBS_FEATURES
 

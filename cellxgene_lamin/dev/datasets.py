@@ -17,19 +17,4 @@ def anndata_human_immune_cells():
         columns=["feature_name", "feature_reference", "feature_biotype"], inplace=True
     )
 
-    # if populate_registries:
-    #     import bionty as bt
-
-    #     verbosity = ln.settings.verbosity
-    #     ln.settings.verbosity = "error"
-    #     cell_types = bt.CellType.from_values(adata.obs["cell_type"])
-    #     ln.save(cell_types)
-    #     organism = bt.Organism.from_public(name="human")
-    #     organism.save()
-    #     genes = bt.Gene.from_values(
-    #         adata.var_names, field=bt.Gene.ensembl_gene_id, organism=organism
-    #     )
-    #     ln.save(genes[:-10])
-    #     ln.settings.verbosity = verbosity
-
     return adata
