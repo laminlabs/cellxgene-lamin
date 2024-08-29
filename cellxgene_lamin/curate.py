@@ -21,23 +21,6 @@ if TYPE_CHECKING:
     from lnschema_core.types import FieldAttr
 
 
-def _convert_name_to_ontology_id(values: pd.Series, field: FieldAttr):
-    """Converts a column that stores a name into a column that stores the ontology id.
-
-    cellxgene expects the obs columns to be {entity}_ontology_id columns and disallows {entity} columns.
-    """
-    field_name = field.field.name
-    assert field_name == "name"
-    cols = ["name", "ontology_id"]
-    registry = field.field.model
-    if hasattr(registry, "ontology_id"):
-        validated_records = registry.filter(**{f"{field_name}__in": values})
-        mapper = (
-            pd.DataFrame(validated_records.values_list(*cols)).set_index(0).to_dict()[1]
-        )
-        return values.map(mapper)
-
-
 def _restrict_obs_fields(
     adata: ad.AnnData, obs_fields: dict[str, FieldAttr]
 ) -> dict[str, str]:
@@ -192,6 +175,27 @@ class Curate(AnnDataCurator):
             ]
         }
 
+    def _convert_name_to_ontology_id(self, values: pd.Series, field: FieldAttr):
+        """Converts a column that stores a name into a column that stores the ontology id.
+
+        cellxgene expects the obs columns to be {entity}_ontology_id columns and disallows {entity} columns.
+        """
+        field_name = field.field.name
+        assert field_name == "name"
+        cols = ["name", "ontology_id"]
+        registry = field.field.model
+
+        if hasattr(registry, "ontology_id"):
+            validated_records = registry.using(self.using_key).filter(
+                **{f"{field_name}__in": values}
+            )
+            mapper = (
+                pd.DataFrame(validated_records.values_list(*cols))
+                .set_index(0)
+                .to_dict()[1]
+            )
+            return values.map(mapper)
+
     def validate(self) -> bool:
         """Validates the AnnData object against most cellxgene requirements."""
         # Verify that all required obs columns are present
@@ -274,7 +278,7 @@ class Curate(AnnDataCurator):
         # convert name column to ontology_term_id column
         for column in adata_cxg.obs.columns:
             if column in self.categoricals and not column.endswith("_ontology_term_id"):
-                mapped_column = _convert_name_to_ontology_id(
+                mapped_column = self._convert_name_to_ontology_id(
                     adata_cxg.obs[column], field=self.categoricals.get(column)
                 )
                 if mapped_column is not None:
