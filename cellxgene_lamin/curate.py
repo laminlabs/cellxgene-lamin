@@ -177,7 +177,7 @@ class Curate(AnnDataCurator):
              "self_reported_ethnicity": ("Ethnicity", self.organism, "hancestro"),
              "development_stage": ("DevelopmentalStage", self.organism, "hsapdv" if self.organism == "human" else "mmusdv"),
              "disease": ("Disease", "all", "mondo"),
-             "organism": ("Organism", "vertebrates", "ensembl"),
+             # "organism": ("Organism", "vertebrates", "ensembl"),
              "sex": ("Phenotype", "all", "pato"),
              "tissue": ("Tissue", "all", "uberon"),
         }
