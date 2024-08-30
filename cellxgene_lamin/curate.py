@@ -21,23 +21,6 @@ if TYPE_CHECKING:
     from lnschema_core.types import FieldAttr
 
 
-def _convert_name_to_ontology_id(values: pd.Series, field: FieldAttr):
-    """Converts a column that stores a name into a column that stores the ontology id.
-
-    cellxgene expects the obs columns to be {entity}_ontology_id columns and disallows {entity} columns.
-    """
-    field_name = field.field.name
-    assert field_name == "name"
-    cols = ["name", "ontology_id"]
-    registry = field.field.model
-    if hasattr(registry, "ontology_id"):
-        validated_records = registry.filter(**{f"{field_name}__in": values})
-        mapper = (
-            pd.DataFrame(validated_records.values_list(*cols)).set_index(0).to_dict()[1]
-        )
-        return values.map(mapper)
-
-
 def _restrict_obs_fields(
     adata: ad.AnnData, obs_fields: dict[str, FieldAttr]
 ) -> dict[str, str]:
@@ -177,7 +160,7 @@ class Curate(AnnDataCurator):
              "self_reported_ethnicity": ("Ethnicity", self.organism, "hancestro"),
              "development_stage": ("DevelopmentalStage", self.organism, "hsapdv" if self.organism == "human" else "mmusdv"),
              "disease": ("Disease", "all", "mondo"),
-             "organism": ("Organism", "vertebrates", "ensembl"),
+             # "organism": ("Organism", "vertebrates", "ensembl"),
              "sex": ("Phenotype", "all", "pato"),
              "tissue": ("Tissue", "all", "uberon"),
         }
@@ -191,6 +174,27 @@ class Curate(AnnDataCurator):
                 (f"{entity}_ontology_id", _fetch_bionty_source(*entity_params)),
             ]
         }
+
+    def _convert_name_to_ontology_id(self, values: pd.Series, field: FieldAttr):
+        """Converts a column that stores a name into a column that stores the ontology id.
+
+        cellxgene expects the obs columns to be {entity}_ontology_id columns and disallows {entity} columns.
+        """
+        field_name = field.field.name
+        assert field_name == "name"
+        cols = ["name", "ontology_id"]
+        registry = field.field.model
+
+        if hasattr(registry, "ontology_id"):
+            validated_records = registry.using(self.using_key).filter(
+                **{f"{field_name}__in": values}
+            )
+            mapper = (
+                pd.DataFrame(validated_records.values_list(*cols))
+                .set_index(0)
+                .to_dict()[1]
+            )
+            return values.map(mapper)
 
     def validate(self) -> bool:
         """Validates the AnnData object against most cellxgene requirements."""
@@ -274,7 +278,7 @@ class Curate(AnnDataCurator):
         # convert name column to ontology_term_id column
         for column in adata_cxg.obs.columns:
             if column in self.categoricals and not column.endswith("_ontology_term_id"):
-                mapped_column = _convert_name_to_ontology_id(
+                mapped_column = self._convert_name_to_ontology_id(
                     adata_cxg.obs[column], field=self.categoricals.get(column)
                 )
                 if mapped_column is not None:
