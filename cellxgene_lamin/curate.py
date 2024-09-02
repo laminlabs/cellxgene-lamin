@@ -106,7 +106,7 @@ class Curate(AnnDataCurator):
             self._pinned_ontologies = _read_schema_versions(schema_versions_path)[
                 self.schema_version
             ]
-        self.sources = self._create_sources()
+        self.sources = self._create_sources(adata)
         self.sources = {
             entity: source
             for entity, source in self.sources.items()
@@ -136,7 +136,7 @@ class Curate(AnnDataCurator):
     def adata(self) -> AnnData:
         return self._adata
 
-    def _create_sources(self) -> dict[str, Record]:
+    def _create_sources(self, adata: ad.AnnData) -> dict[str, Record]:
         """Creates a sources dictionary that can be passed to AnnDataCurator."""
 
         # fmt: off
@@ -177,7 +177,7 @@ class Curate(AnnDataCurator):
         entity_to_sources = {
             entity: source
             for entity, source in entity_to_sources.items()
-            if entity in self.adata.obs.columns or entity in {"var_index"}
+            if entity in adata.obs.columns or entity in {"var_index"}
         }
 
         return entity_to_sources
