@@ -172,17 +172,13 @@ class Curate(AnnDataCurator):
         # fmt: on
 
         entity_to_sources = {
-            entity_key: source_obj
-            for entity, entity_params in entity_mapping.items()
-            for entity_key, source_obj in [
-                (entity, _fetch_bionty_source(*entity_params)),
-                (f"{entity}_ontology_id", _fetch_bionty_source(*entity_params)),
-            ]
-        }
-        entity_to_sources = {
-            entity: source
-            for entity, source in entity_to_sources.items()
-            if entity in adata.obs.columns or entity in {"var_index"}
+            key: source
+            for entity, params in entity_mapping.items()
+            for key, source in {
+                entity: _fetch_bionty_source(*params),
+                f"{entity}_ontology_id": _fetch_bionty_source(*params),
+            }.items()
+            if key in adata.obs.columns or key == "var_index"
         }
 
         return entity_to_sources
