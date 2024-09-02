@@ -153,7 +153,7 @@ class Curate(AnnDataCurator):
             return bt.Source.using(self.using_key).filter(organism=organism, entity=f"bionty.{entity}", version=version).first()
 
         entity_mapping = {
-            "var_index": ("Gene", self.organism, "ensembl"),
+             "var_index": ("Gene", self.organism, "ensembl"),
              "gene": ("Gene", self.organism, "ensembl"),
              "cell_type": ("CellType", "all", "cl"),
              "assay": ("ExperimentalFactor", "all", "efo"),
@@ -166,7 +166,7 @@ class Curate(AnnDataCurator):
         }
         # fmt: on
 
-        return {
+        entity_to_sources = {
             entity_key: source_obj
             for entity, entity_params in entity_mapping.items()
             for entity_key, source_obj in [
@@ -174,6 +174,13 @@ class Curate(AnnDataCurator):
                 (f"{entity}_ontology_id", _fetch_bionty_source(*entity_params)),
             ]
         }
+        entity_to_sources = {
+            entity: source
+            for entity, source in entity_to_sources.items()
+            if entity in self.adata.obs.columns or entity in {"var_index"}
+        }
+
+        return entity_to_sources
 
     def _convert_name_to_ontology_id(self, values: pd.Series, field: FieldAttr):
         """Converts a column that stores a name into a column that stores the ontology id.
