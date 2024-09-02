@@ -116,6 +116,11 @@ class Curate(AnnDataCurator):
         if defaults:
             _add_defaults_to_obs(adata, defaults)
 
+        exclude_keys = {
+            entity: default
+            for entity, default in CellxGeneFields.OBS_FIELD_DEFAULTS.items()
+            if entity in adata.obs.columns  # type: ignore
+        }
         super().__init__(
             data=adata,
             var_index=var_index,
@@ -124,7 +129,7 @@ class Curate(AnnDataCurator):
             verbosity=verbosity,
             organism=organism,
             sources=self.sources,
-            exclude=CellxGeneFields.OBS_FIELD_DEFAULTS,
+            exclude=exclude_keys,
         )
 
     @property
