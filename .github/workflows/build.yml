@@ -18,7 +18,6 @@ jobs:
       matrix:
         python-version: ["3.11"]
         group:
-          - "census"
           - "validator"
     timeout-minutes: 15
 
