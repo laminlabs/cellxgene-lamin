@@ -49,12 +49,7 @@ repos:
       - id: mypy
         args: [--no-strict-optional, --ignore-missing-imports]
         additional_dependencies:
-          [
-            "types-pkg-resources",
-            "types-requests",
-            "types-attrs",
-            "types-PyYAML",
-          ]
+          ["types-requests", "types-attrs", "types-PyYAML"]
         exclude: |
           (?x)(
               test_notebooks.py
