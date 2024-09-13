@@ -41,7 +41,7 @@ def install(session: nox.Session, group: str) -> None:
         run(session, "uv pip install --system cellxgene-schema==5.0.2")
     install_lamindb(session, branch="main", extras=extras)
     run(session, "uv pip install --system .[dev]")
-    run(session, "uv pip install --system numpy==1.19.5")  # issue 94
+    run(session, "uv pip install --system numpy==1.23.0")  # issue 94
 
 
 @nox.session
