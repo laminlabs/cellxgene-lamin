@@ -86,12 +86,12 @@ class Curate(AnnDataCurator):
         using_key: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
         organism: str | None = None,
-        schema_version: Literal["4.0.0", "5.0.0"] = "5.0.0",
+        schema_version: Literal["4.0.0", "5.0.0", "5.1.0"] = "5.1.0",
     ):
         self.organism = organism
         self.using_key = using_key
 
-        VALID_SCHEMA_VERSIONS = {"4.0.0", "5.0.0"}
+        VALID_SCHEMA_VERSIONS = {"4.0.0", "5.0.0", "5.1.0"}
         if schema_version not in VALID_SCHEMA_VERSIONS:
             valid_versions = ", ".join(sorted(VALID_SCHEMA_VERSIONS))
             raise ValueError(
