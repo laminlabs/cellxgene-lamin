@@ -38,10 +38,9 @@ def install(session: nox.Session, group: str) -> None:
     elif group == "validator":
         extras = "bionty,jupyter,aws,zarr"
         run(session, "uv pip install --system tiledbsoma")
-        run(session, "uv pip install --system cellxgene-schema==5.1.1")
+        run(session, "uv tool install --system cellxgene-schema==5.1.1")
     install_lamindb(session, branch="main", extras=extras)
     run(session, "uv pip install --system .[dev]")
-    run(session, "uv pip install --system numpy==1.23.2")  # issue 94
 
 
 @nox.session
