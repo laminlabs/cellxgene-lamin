@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.11"]
         group:
           - "validator"
     timeout-minutes: 20
@@ -54,7 +54,7 @@ jobs:
           pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
           sudo apt-get -y install graphviz
       - run: nox -s lint
-        if: ${{ matrix.python-version == '3.12' && matrix.group == 'validator' }}
+        if: ${{ matrix.python-version == '3.11' && matrix.group == 'validator' }}
       - run: nox -s "install(group='${{ matrix.group }}')"
       - run: nox -s "build(group='${{ matrix.group }}')"
       - name: upload docs
@@ -85,7 +85,7 @@ jobs:
           aws-region: us-east-1
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
       - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
       - run: nox -s "install(group='docs')"
       - uses: actions/download-artifact@v4
