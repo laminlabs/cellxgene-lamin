@@ -1,4 +1,4 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 
 def register_ulabels(cxg_datasets: Iterable, feature_name: str):
