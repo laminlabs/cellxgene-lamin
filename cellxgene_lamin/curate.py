@@ -73,7 +73,7 @@ def _add_defaults_to_obs(
         logger.important(f"added defaults to the AnnData object: {added_defaults}")
 
 
-class Curate(AnnDataCurator):
+class Curator(AnnDataCurator):
     """Annotation flow of AnnData based on CELLxGENE schema."""
 
     def __init__(
@@ -81,11 +81,12 @@ class Curate(AnnDataCurator):
         adata: ad.AnnData | str | Path,
         var_index: FieldAttr = bt.Gene.ensembl_gene_id,
         categoricals: dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
+        organism: Literal["human", "mouse"] = "human",
         *,
         defaults: dict[str, str] = None,
         using_key: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
-        organism: str | None = None,
+        extra_sources: dict[str, Record] = None,
         schema_version: Literal["4.0.0", "5.0.0", "5.1.0"] = "5.1.0",
     ):
         self.organism = organism
@@ -112,6 +113,9 @@ class Curate(AnnDataCurator):
             for entity, source in self.sources.items()
             if source is not None
         }
+        # These sources are not a part of the cellxgene schema but rather passed through
+        if extra_sources:
+            self.sources = self.sources | extra_sources
 
         if defaults:
             _add_defaults_to_obs(adata, defaults)
