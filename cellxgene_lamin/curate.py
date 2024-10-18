@@ -83,9 +83,9 @@ class Curator(AnnDataCurator):
         organism: Literal["human", "mouse"] = "human",
         *,
         defaults: dict[str, str] = None,
-        verbosity: str = "hint",
         extra_sources: dict[str, Record] = None,
         schema_version: Literal["4.0.0", "5.0.0", "5.1.0"] = "5.1.0",
+        verbosity: str = "hint",
         using_key: str = "laminlabs/cellxgene",
     ) -> None:
         """CELLxGENE schema curator.
@@ -97,12 +97,12 @@ class Curator(AnnDataCurator):
                 The CELLxGENE Curator maps against the required CELLxGENE fields by default.
             organism: The organism name. CELLxGENE restricts it to 'human' and 'mouse'.
             defaults: Default values that are set if columns or column values are missing.
-            verbosity: The verbosity level.
             extra_sources: A dictionary mapping ``.obs.columns`` to Source records.
                 These extra sources are joined with the CELLxGENE fixed sources.
                 Use this parameter when subclassing.
             exclude: A dictionary mapping column names to values to exclude.
             schema_version: The CELLxGENE schema version to curate against.
+            verbosity: The verbosity level.
             using_key: A reference LaminDB instance.
                 Do not set to a different instance unless you have a copy of the laminlabs/cellxgene instance.
         """
@@ -124,19 +124,22 @@ class Curator(AnnDataCurator):
             self._pinned_ontologies = _read_schema_versions(schema_versions_path)[
                 self.schema_version
             ]
+
+        # Add defaults first to ensure that we fetch valid sources
+        if defaults:
+            _add_defaults_to_obs(adata, defaults)
+
         self.sources = self._create_sources(adata)
         self.sources = {
             entity: source
             for entity, source in self.sources.items()
             if source is not None
         }
+
         # These sources are not a part of the cellxgene schema but rather passed through.
         # This is useful when other Curators extend the CELLxGENE curator
         if extra_sources:
             self.sources = self.sources | extra_sources
-
-        if defaults:
-            _add_defaults_to_obs(adata, defaults)
 
         exclude_keys = {
             entity: default
@@ -182,7 +185,6 @@ class Curator(AnnDataCurator):
 
         entity_mapping = {
              "var_index": ("Gene", self.organism, "ensembl"),
-             "gene": ("Gene", self.organism, "ensembl"),
              "cell_type": ("CellType", "all", "cl"),
              "assay": ("ExperimentalFactor", "all", "efo"),
              "self_reported_ethnicity": ("Ethnicity", self.organism, "hancestro"),
@@ -195,14 +197,25 @@ class Curator(AnnDataCurator):
         # fmt: on
 
         entity_to_sources = {
-            key: source
+            entity: _fetch_bionty_source(*params)
             for entity, params in entity_mapping.items()
-            for key, source in {
-                entity: _fetch_bionty_source(*params),
-                f"{entity}_ontology_id": _fetch_bionty_source(*params),
-            }.items()
-            if key in adata.obs.columns or key == "var_index"
+            if entity in adata.obs.columns
+            or (
+                f"{entity}_ontology_term_id" in adata.obs.columns
+                and entity != "var_index"
+            )
+            or entity == "var_index"
         }
+
+        # entity_to_sources = {
+        #    key: source
+        #    for entity, params in entity_mapping.items()
+        #    for key, source in {
+        #        entity: _fetch_bionty_source(*params),
+        #        f"{entity}_ontology_id": _fetch_bionty_source(*params),
+        #    }.items()
+        #    if key in adata.obs.columns or key == "var_index"
+        # }
 
         return entity_to_sources
 
