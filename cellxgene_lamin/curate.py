@@ -207,16 +207,6 @@ class Curator(AnnDataCurator):
             or entity == "var_index"
         }
 
-        # entity_to_sources = {
-        #    key: source
-        #    for entity, params in entity_mapping.items()
-        #    for key, source in {
-        #        entity: _fetch_bionty_source(*params),
-        #        f"{entity}_ontology_id": _fetch_bionty_source(*params),
-        #    }.items()
-        #    if key in adata.obs.columns or key == "var_index"
-        # }
-
         return entity_to_sources
 
     def _convert_name_to_ontology_id(self, values: pd.Series, field: FieldAttr):
