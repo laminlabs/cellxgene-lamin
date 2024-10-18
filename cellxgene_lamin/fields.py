@@ -1,5 +1,6 @@
 import bionty as bt
 import lamindb as ln
+import pandas as pd
 
 
 class CellxGeneFields:
@@ -29,13 +30,13 @@ class CellxGeneFields:
 
     OBS_FIELD_DEFAULTS = {
         "assay": "unknown",
-        "cell_type": "native_cell",
+        "cell_type": "unknown",
         "development_stage": "unknown",
         "disease": "normal",
-        "donor_id": "na",
+        "donor_id": "unknown",
         "self_reported_ethnicity": "unknown",
         "sex": "unknown",
-        "suspension_type": "cell",
-        "tissue_type": "tissue",
+        "suspension_type": "unknown",
+        "tissue_type": "unknown",
         "organism": "unknown",
     }
