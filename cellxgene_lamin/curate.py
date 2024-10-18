@@ -7,16 +7,15 @@ from typing import TYPE_CHECKING, Literal
 import bionty as bt
 import pandas as pd
 from lamin_utils import logger
-from lamindb._curate import AnnDataCurator, validate_categories_in_df
+from lamindb._curate import AnnDataCurator
 
 from .fields import CellxGeneFields
 from .schemas._schema_versions import _read_schema_versions
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     import anndata as ad
     from anndata import AnnData
+    from lamindb_setup.core.types import UPathStr
     from lnschema_core import Record
     from lnschema_core.types import FieldAttr
 
@@ -60,7 +59,7 @@ def _add_defaults_to_obs(
     adata: ad.AnnData,
     defaults: dict[str, str],
 ) -> None:
-    """Add defaults to the obs fields."""
+    """Add defaults to the obs columns."""
     added_defaults: dict = {}
     for name, default in defaults.items():
         if (
@@ -78,17 +77,35 @@ class Curator(AnnDataCurator):
 
     def __init__(
         self,
-        adata: ad.AnnData | str | Path,
+        adata: ad.AnnData | UPathStr,
         var_index: FieldAttr = bt.Gene.ensembl_gene_id,
         categoricals: dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
         organism: Literal["human", "mouse"] = "human",
         *,
         defaults: dict[str, str] = None,
-        using_key: str = "laminlabs/cellxgene",
         verbosity: str = "hint",
         extra_sources: dict[str, Record] = None,
         schema_version: Literal["4.0.0", "5.0.0", "5.1.0"] = "5.1.0",
-    ):
+        using_key: str = "laminlabs/cellxgene",
+    ) -> None:
+        """CELLxGENE schema curator.
+
+        Args:
+            adata: Path to or AnnData object to curate against the CELLxGENE schema.
+            var_index: The registry field for mapping the ``.var`` index.
+            categoricals: A dictionary mapping ``.obs.columns`` to a registry field.
+                The CELLxGENE Curator maps against the required CELLxGENE fields by default.
+            organism: The organism name. CELLxGENE restricts it to 'human' and 'mouse'.
+            defaults: Default values that are set if columns or column values are missing.
+            verbosity: The verbosity level.
+            extra_sources: A dictionary mapping ``.obs.columns`` to Source records.
+                These extra sources are joined with the CELLxGENE fixed sources.
+                Use this parameter when subclassing.
+            exclude: A dictionary mapping column names to values to exclude.
+            schema_version: The CELLxGENE schema version to curate against.
+            using_key: A reference LaminDB instance.
+                Do not set to a different instance unless you have a copy of the laminlabs/cellxgene instance.
+        """
         self.organism = organism
         self.using_key = using_key
 
@@ -113,7 +130,8 @@ class Curator(AnnDataCurator):
             for entity, source in self.sources.items()
             if source is not None
         }
-        # These sources are not a part of the cellxgene schema but rather passed through
+        # These sources are not a part of the cellxgene schema but rather passed through.
+        # This is useful when other Curators extend the CELLxGENE curator
         if extra_sources:
             self.sources = self.sources | extra_sources
 
@@ -125,6 +143,7 @@ class Curator(AnnDataCurator):
             for entity, default in CellxGeneFields.OBS_FIELD_DEFAULTS.items()
             if entity in adata.obs.columns  # type: ignore
         }
+
         super().__init__(
             data=adata,
             var_index=var_index,
