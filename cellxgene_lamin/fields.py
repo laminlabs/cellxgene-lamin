@@ -1,5 +1,6 @@
 import bionty as bt
 import lamindb as ln
+import pandas as pd
 
 
 class CellxGeneFields:
@@ -28,14 +29,16 @@ class CellxGeneFields:
     }
 
     OBS_FIELD_DEFAULTS = {
+        "organism": "unknown",
         "assay": "unknown",
-        "cell_type": "native_cell",
+        "cell_type": "unknown",
         "development_stage": "unknown",
         "disease": "normal",
-        "donor_id": "na",
+        "donor_id": "unknown",
         "self_reported_ethnicity": "unknown",
         "sex": "unknown",
+        # Setting these defaults to 'unknown' will lead the validator to fail because it expects a specified set of values that does not include 'unknown'.
+        # 'unknown' is registered as a ULabel and is therefore validated.
         "suspension_type": "cell",
         "tissue_type": "tissue",
-        "organism": "unknown",
     }
