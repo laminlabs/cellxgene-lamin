@@ -29,6 +29,7 @@ class CellxGeneFields:
     }
 
     OBS_FIELD_DEFAULTS = {
+        "organism": "unknown",
         "assay": "unknown",
         "cell_type": "unknown",
         "development_stage": "unknown",
@@ -36,7 +37,8 @@ class CellxGeneFields:
         "donor_id": "unknown",
         "self_reported_ethnicity": "unknown",
         "sex": "unknown",
-        "suspension_type": "unknown",
-        "tissue_type": "unknown",
-        "organism": "unknown",
+        # Setting these defaults to 'unknown' will lead the validator to fail because it expects a specified set of values that does not include 'unknown'.
+        # 'unknown' is registered as a ULabel and is therefore validated.
+        "suspension_type": "cell",
+        "tissue_type": "tissue",
     }
