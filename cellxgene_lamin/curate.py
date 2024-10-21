@@ -97,7 +97,6 @@ class Curator(AnnDataCurator):
             schema_version: The CELLxGENE schema version to curate against.
             verbosity: The verbosity level.
             using_key: A reference LaminDB instance.
-                Do not set to a different instance unless you have a copy of the laminlabs/cellxgene instance.
         """
         self.organism = organism
         self.using_key = using_key
@@ -118,7 +117,7 @@ class Curator(AnnDataCurator):
                 self.schema_version
             ]
 
-        # Fetch AnnData obs to get appropriate sources and set defaults
+        # Fetch AnnData obs to be able to set defaults and get sources
         if isinstance(adata, ad.AnnData):
             self._adata_obs = adata.obs
         else:
