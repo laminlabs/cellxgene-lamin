@@ -4,16 +4,18 @@ import re
 from importlib import resources
 from typing import TYPE_CHECKING, Literal
 
+import anndata as ad
 import bionty as bt
 import pandas as pd
 from lamin_utils import logger
 from lamindb._curate import AnnDataCurator
+from lamindb.core.storage._backed_access import backed_access
+from lamindb_setup.core import upath
 
 from .fields import CellxGeneFields
 from .schemas._schema_versions import _read_schema_versions
 
 if TYPE_CHECKING:
-    import anndata as ad
     from anndata import AnnData
     from lamindb_setup.core.types import UPathStr
     from lnschema_core import Record
@@ -21,7 +23,7 @@ if TYPE_CHECKING:
 
 
 def _restrict_obs_fields(
-    adata: ad.AnnData, obs_fields: dict[str, FieldAttr]
+    obs: pd.DataFrame, obs_fields: dict[str, FieldAttr]
 ) -> dict[str, str]:
     """Restrict the obs fields to name return only available obs fields.
 
@@ -29,44 +31,35 @@ def _restrict_obs_fields(
     If both are available, we validate against ontology_id.
     If none are available, we validate against name.
     """
-    obs_fields_unique = {k: v for k, v in obs_fields.items() if k in adata.obs.columns}
+    obs_fields_unique = {k: v for k, v in obs_fields.items() if k in obs.columns}
     for name, field in obs_fields.items():
         if name.endswith("_ontology_term_id"):
             continue
         # if both the ontology id and the name are present, only validate on the ontology_id
-        if (
-            name in adata.obs.columns
-            and f"{name}_ontology_term_id" in adata.obs.columns
-        ):
+        if name in obs.columns and f"{name}_ontology_term_id" in obs.columns:
             obs_fields_unique.pop(name)
         # if the neither name nor ontology id are present, validate on the name
         # this will raise error downstream, we just use name to be more readable
-        if (
-            name not in adata.obs.columns
-            and f"{name}_ontology_term_id" not in adata.obs.columns
-        ):
+        if name not in obs.columns and f"{name}_ontology_term_id" not in obs.columns:
             obs_fields_unique[name] = field
 
     # Only retain obs_fields_unique that have keys in adata.obs.columns
     available_obs_fields = {
-        k: v for k, v in obs_fields_unique.items() if k in adata.obs.columns
+        k: v for k, v in obs_fields_unique.items() if k in obs.columns
     }
 
     return available_obs_fields
 
 
 def _add_defaults_to_obs(
-    adata: ad.AnnData,
+    obs: pd.DataFrame,
     defaults: dict[str, str],
 ) -> None:
-    """Add defaults to the obs columns."""
+    """Add default columns and values to obs DataFrame."""
     added_defaults: dict = {}
     for name, default in defaults.items():
-        if (
-            name not in adata.obs.columns
-            and f"{name}_ontology_term_id" not in adata.obs.columns
-        ):
-            adata.obs[name] = default
+        if name not in obs.columns and f"{name}_ontology_term_id" not in obs.columns:
+            obs[name] = default
             added_defaults[name] = default
     if len(added_defaults) > 0:
         logger.important(f"added defaults to the AnnData object: {added_defaults}")
@@ -125,11 +118,17 @@ class Curator(AnnDataCurator):
                 self.schema_version
             ]
 
+        # Fetch AnnData obs to get appropriate sources and set defaults
+        if isinstance(adata, ad.AnnData):
+            self._adata_obs = adata.obs
+        else:
+            self._adata_obs = backed_access(upath.create_path(adata)).obs
+
         # Add defaults first to ensure that we fetch valid sources
         if defaults:
-            _add_defaults_to_obs(adata, defaults)
+            _add_defaults_to_obs(self._adata_obs, defaults)
 
-        self.sources = self._create_sources(adata)
+        self.sources = self._create_sources(self._adata_obs)
         self.sources = {
             entity: source
             for entity, source in self.sources.items()
@@ -141,16 +140,17 @@ class Curator(AnnDataCurator):
         if extra_sources:
             self.sources = self.sources | extra_sources
 
+        # Exclude default values from validation because they are not available in the pinned sources
         exclude_keys = {
             entity: default
             for entity, default in CellxGeneFields.OBS_FIELD_DEFAULTS.items()
-            if entity in adata.obs.columns  # type: ignore
+            if entity in self._adata_obs.columns  # type: ignore
         }
 
         super().__init__(
             data=adata,
             var_index=var_index,
-            categoricals=_restrict_obs_fields(adata, categoricals),
+            categoricals=_restrict_obs_fields(self._adata_obs, categoricals),
             using_key=using_key,
             verbosity=verbosity,
             organism=organism,
@@ -160,14 +160,13 @@ class Curator(AnnDataCurator):
 
     @property
     def pinned_ontologies(self) -> pd.DataFrame:
-        print(f"Currently used schema version: {self.schema_version}")
         return self._pinned_ontologies
 
     @property
     def adata(self) -> AnnData:
         return self._adata
 
-    def _create_sources(self, adata: ad.AnnData) -> dict[str, Record]:
+    def _create_sources(self, obs: pd.DataFrame) -> dict[str, Record]:
         """Creates a sources dictionary that can be passed to AnnDataCurator."""
 
         # fmt: off
@@ -196,14 +195,12 @@ class Curator(AnnDataCurator):
         }
         # fmt: on
 
+        # Retain var_index and one of 'entity'/'entity_ontology_term_id' that is present in obs
         entity_to_sources = {
             entity: _fetch_bionty_source(*params)
             for entity, params in entity_mapping.items()
-            if entity in adata.obs.columns
-            or (
-                f"{entity}_ontology_term_id" in adata.obs.columns
-                and entity != "var_index"
-            )
+            if entity in obs.columns
+            or (f"{entity}_ontology_term_id" in obs.columns and entity != "var_index")
             or entity == "var_index"
         }
 
@@ -239,7 +236,6 @@ class Curator(AnnDataCurator):
             if name not in self._adata.obs.columns
             and f"{name}_ontology_term_id" not in self._adata.obs.columns
         ]
-
         if len(missing_obs_fields) > 0:
             missing_obs_fields_str = ", ".join(list(missing_obs_fields))
             logger.error(f"missing required obs columns {missing_obs_fields_str}")
