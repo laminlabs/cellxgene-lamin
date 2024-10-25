@@ -4,25 +4,26 @@ import re
 from importlib import resources
 from typing import TYPE_CHECKING, Literal
 
+import anndata as ad
 import bionty as bt
 import pandas as pd
 from lamin_utils import logger
-from lamindb._curate import AnnDataCurator, validate_categories_in_df
+from lamindb._curate import AnnDataCurator
+from lamindb.core.storage._backed_access import backed_access
+from lamindb_setup.core import upath
 
 from .fields import CellxGeneFields
 from .schemas._schema_versions import _read_schema_versions
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
-    import anndata as ad
     from anndata import AnnData
+    from lamindb_setup.core.types import UPathStr
     from lnschema_core import Record
     from lnschema_core.types import FieldAttr
 
 
 def _restrict_obs_fields(
-    adata: ad.AnnData, obs_fields: dict[str, FieldAttr]
+    obs: pd.DataFrame, obs_fields: dict[str, FieldAttr]
 ) -> dict[str, str]:
     """Restrict the obs fields to name return only available obs fields.
 
@@ -30,64 +31,73 @@ def _restrict_obs_fields(
     If both are available, we validate against ontology_id.
     If none are available, we validate against name.
     """
-    obs_fields_unique = {k: v for k, v in obs_fields.items() if k in adata.obs.columns}
+    obs_fields_unique = {k: v for k, v in obs_fields.items() if k in obs.columns}
     for name, field in obs_fields.items():
         if name.endswith("_ontology_term_id"):
             continue
         # if both the ontology id and the name are present, only validate on the ontology_id
-        if (
-            name in adata.obs.columns
-            and f"{name}_ontology_term_id" in adata.obs.columns
-        ):
+        if name in obs.columns and f"{name}_ontology_term_id" in obs.columns:
             obs_fields_unique.pop(name)
         # if the neither name nor ontology id are present, validate on the name
         # this will raise error downstream, we just use name to be more readable
-        if (
-            name not in adata.obs.columns
-            and f"{name}_ontology_term_id" not in adata.obs.columns
-        ):
+        if name not in obs.columns and f"{name}_ontology_term_id" not in obs.columns:
             obs_fields_unique[name] = field
 
     # Only retain obs_fields_unique that have keys in adata.obs.columns
     available_obs_fields = {
-        k: v for k, v in obs_fields_unique.items() if k in adata.obs.columns
+        k: v for k, v in obs_fields_unique.items() if k in obs.columns
     }
 
     return available_obs_fields
 
 
 def _add_defaults_to_obs(
-    adata: ad.AnnData,
+    obs: pd.DataFrame,
     defaults: dict[str, str],
 ) -> None:
-    """Add defaults to the obs fields."""
+    """Add default columns and values to obs DataFrame."""
     added_defaults: dict = {}
     for name, default in defaults.items():
-        if (
-            name not in adata.obs.columns
-            and f"{name}_ontology_term_id" not in adata.obs.columns
-        ):
-            adata.obs[name] = default
+        if name not in obs.columns and f"{name}_ontology_term_id" not in obs.columns:
+            obs[name] = default
             added_defaults[name] = default
     if len(added_defaults) > 0:
         logger.important(f"added defaults to the AnnData object: {added_defaults}")
 
 
-class Curate(AnnDataCurator):
+class Curator(AnnDataCurator):
     """Annotation flow of AnnData based on CELLxGENE schema."""
 
     def __init__(
         self,
-        adata: ad.AnnData | str | Path,
+        adata: ad.AnnData | UPathStr,
         var_index: FieldAttr = bt.Gene.ensembl_gene_id,
         categoricals: dict[str, FieldAttr] = CellxGeneFields.OBS_FIELDS,
+        organism: Literal["human", "mouse"] = "human",
         *,
         defaults: dict[str, str] = None,
-        using_key: str = "laminlabs/cellxgene",
-        verbosity: str = "hint",
-        organism: str | None = None,
+        extra_sources: dict[str, Record] = None,
         schema_version: Literal["4.0.0", "5.0.0", "5.1.0"] = "5.1.0",
-    ):
+        verbosity: str = "hint",
+        using_key: str = "laminlabs/cellxgene",
+    ) -> None:
+        """CELLxGENE schema curator.
+
+        Args:
+            adata: Path to or AnnData object to curate against the CELLxGENE schema.
+            var_index: The registry field for mapping the ``.var`` index.
+            categoricals: A dictionary mapping ``.obs.columns`` to a registry field.
+                The CELLxGENE Curator maps against the required CELLxGENE fields by default.
+            organism: The organism name. CELLxGENE restricts it to 'human' and 'mouse'.
+            defaults: Default values that are set if columns or column values are missing.
+            extra_sources: A dictionary mapping ``.obs.columns`` to Source records.
+                These extra sources are joined with the CELLxGENE fixed sources.
+                Use this parameter when subclassing.
+            exclude: A dictionary mapping column names to values to exclude.
+            schema_version: The CELLxGENE schema version to curate against.
+            verbosity: The verbosity level.
+            using_key: A reference LaminDB instance.
+        """
         self.organism = organism
         self.using_key = using_key
 
@@ -106,25 +116,40 @@ class Curate(AnnDataCurator):
             self._pinned_ontologies = _read_schema_versions(schema_versions_path)[
                 self.schema_version
             ]
-        self.sources = self._create_sources(adata)
+
+        # Fetch AnnData obs to be able to set defaults and get sources
+        if isinstance(adata, ad.AnnData):
+            self._adata_obs = adata.obs
+        else:
+            self._adata_obs = backed_access(upath.create_path(adata)).obs
+
+        # Add defaults first to ensure that we fetch valid sources
+        if defaults:
+            _add_defaults_to_obs(self._adata_obs, defaults)
+
+        self.sources = self._create_sources(self._adata_obs)
         self.sources = {
             entity: source
             for entity, source in self.sources.items()
             if source is not None
         }
 
-        if defaults:
-            _add_defaults_to_obs(adata, defaults)
+        # These sources are not a part of the cellxgene schema but rather passed through.
+        # This is useful when other Curators extend the CELLxGENE curator
+        if extra_sources:
+            self.sources = self.sources | extra_sources
 
+        # Exclude default values from validation because they are not available in the pinned sources
         exclude_keys = {
             entity: default
             for entity, default in CellxGeneFields.OBS_FIELD_DEFAULTS.items()
-            if entity in adata.obs.columns  # type: ignore
+            if entity in self._adata_obs.columns  # type: ignore
         }
+
         super().__init__(
             data=adata,
             var_index=var_index,
-            categoricals=_restrict_obs_fields(adata, categoricals),
+            categoricals=_restrict_obs_fields(self._adata_obs, categoricals),
             using_key=using_key,
             verbosity=verbosity,
             organism=organism,
@@ -134,14 +159,13 @@ class Curate(AnnDataCurator):
 
     @property
     def pinned_ontologies(self) -> pd.DataFrame:
-        print(f"Currently used schema version: {self.schema_version}")
         return self._pinned_ontologies
 
     @property
     def adata(self) -> AnnData:
         return self._adata
 
-    def _create_sources(self, adata: ad.AnnData) -> dict[str, Record]:
+    def _create_sources(self, obs: pd.DataFrame) -> dict[str, Record]:
         """Creates a sources dictionary that can be passed to AnnDataCurator."""
 
         # fmt: off
@@ -159,7 +183,6 @@ class Curate(AnnDataCurator):
 
         entity_mapping = {
              "var_index": ("Gene", self.organism, "ensembl"),
-             "gene": ("Gene", self.organism, "ensembl"),
              "cell_type": ("CellType", "all", "cl"),
              "assay": ("ExperimentalFactor", "all", "efo"),
              "self_reported_ethnicity": ("Ethnicity", self.organism, "hancestro"),
@@ -171,14 +194,13 @@ class Curate(AnnDataCurator):
         }
         # fmt: on
 
+        # Retain var_index and one of 'entity'/'entity_ontology_term_id' that is present in obs
         entity_to_sources = {
-            key: source
+            entity: _fetch_bionty_source(*params)
             for entity, params in entity_mapping.items()
-            for key, source in {
-                entity: _fetch_bionty_source(*params),
-                f"{entity}_ontology_id": _fetch_bionty_source(*params),
-            }.items()
-            if key in adata.obs.columns or key == "var_index"
+            if entity in obs.columns
+            or (f"{entity}_ontology_term_id" in obs.columns and entity != "var_index")
+            or entity == "var_index"
         }
 
         return entity_to_sources
@@ -213,7 +235,6 @@ class Curate(AnnDataCurator):
             if name not in self._adata.obs.columns
             and f"{name}_ontology_term_id" not in self._adata.obs.columns
         ]
-
         if len(missing_obs_fields) > 0:
             missing_obs_fields_str = ", ".join(list(missing_obs_fields))
             logger.error(f"missing required obs columns {missing_obs_fields_str}")
