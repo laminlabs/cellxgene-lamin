@@ -1,7 +1,9 @@
+from typing import Any
+
 import requests
 
 
-def get_datasets_from_cxg():
+def get_datasets_from_cxg() -> dict[str, Any]:
     api_url_base = "https://api.cellxgene.cziscience.com"
     datasets_path = "/curation/v1/datasets"
     datasets_url = f"{api_url_base}{datasets_path}"
@@ -12,7 +14,7 @@ def get_datasets_from_cxg():
     return res_content
 
 
-def get_collections_from_cxg():
+def get_collections_from_cxg() -> dict[str, Any]:
     api_url_base = "https://api.cellxgene.cziscience.com"
     collections_path = "/curation/v1/collections"
     collections_url = f"{api_url_base}{collections_path}"
