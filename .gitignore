@@ -113,6 +113,7 @@ test-cellxgene/
 *.lamindb
 
 # Convenience
+run-tests
 test.ipynb
 
 # cxg
