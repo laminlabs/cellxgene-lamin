@@ -8,8 +8,8 @@ import anndata as ad
 import bionty as bt
 import pandas as pd
 from lamin_utils import logger
-from lamindb._curate import AnnDataCurator
 from lamindb.core.storage._backed_access import backed_access
+from lamindb.curators import AnnDataCurator
 from lamindb_setup.core import upath
 
 from .fields import CellxGeneFields
@@ -61,8 +61,9 @@ def _add_defaults_to_obs(
         if name not in obs.columns and f"{name}_ontology_term_id" not in obs.columns:
             obs[name] = default
             added_defaults[name] = default
-    if len(added_defaults) > 0:
-        logger.important(f"added defaults to the AnnData object: {added_defaults}")
+            logger.important(
+                f"added default value '{default}' to the adata.obs['{name}']"
+            )
 
 
 class Curator(AnnDataCurator):
