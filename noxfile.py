@@ -32,11 +32,11 @@ def lint(session: nox.Session) -> None:
 def install(session: nox.Session, group: str) -> None:
     extras = ""
     if group == "census":
-        extras = "bionty,jupyter,aws"
-        run(session, "uv pip install --system tiledbsoma")
+        extras = "bionty,jupyter"
+        run(session, "uv pip install --system tiledbsoma==1.15.0rc3")
     elif group == "validator":
-        extras = "bionty,jupyter,aws,zarr"
-        run(session, "uv pip install --system tiledbsoma")
+        extras = "bionty,jupyter,zarr"
+        run(session, "uv pip install --system tiledbsoma==1.15.0rc3")
         run(session, "uv tool install cellxgene-schema==5.2.2")
     install_lamindb(session, branch="main", extras=extras)
     run(session, "uv pip install --system .[dev]")
