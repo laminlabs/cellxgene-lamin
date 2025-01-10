@@ -9,7 +9,10 @@ import bionty as bt
 import pandas as pd
 from lamin_utils import logger
 from lamindb.core.storage._backed_access import backed_access
-from lamindb.curators import AnnDataCurator
+try:
+    from lamindb.curators import AnnDataCurator
+except ImportError:
+    from lamindb.core import AnnDataCurator
 from lamindb_setup.core import upath
 
 from .fields import CellxGeneFields
