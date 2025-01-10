@@ -37,6 +37,7 @@ class CellxGeneFields:
         "donor_id": "unknown",
         "self_reported_ethnicity": "unknown",
         "sex": "unknown",
+        "tissue": "unknown",
         # Setting these defaults to 'unknown' will lead the validator to fail because it expects a specified set of values that does not include 'unknown'.
         # 'unknown' is registered as a ULabel and is therefore validated.
         "suspension_type": "cell",
