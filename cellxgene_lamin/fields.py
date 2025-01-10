@@ -29,8 +29,6 @@ class CellxGeneFields:
     }
 
     OBS_FIELD_DEFAULTS = {
-        "organism": "unknown",
-        "assay": "unknown",
         "cell_type": "unknown",
         "development_stage": "unknown",
         "disease": "normal",
