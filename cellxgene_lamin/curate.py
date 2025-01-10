@@ -9,6 +9,7 @@ import bionty as bt
 import pandas as pd
 from lamin_utils import logger
 from lamindb.core.storage._backed_access import backed_access
+
 try:
     from lamindb.curators import AnnDataCurator
 except ImportError:
