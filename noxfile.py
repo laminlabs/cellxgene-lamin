@@ -35,7 +35,7 @@ def install(session: nox.Session, group: str) -> None:
         extras = "bionty,jupyter,zarr"
         run(session, "uv pip install --system tiledbsoma==1.15.0rc3")
         run(session, "uv tool install cellxgene-schema==5.2.2")
-    install_lamindb(session, branch="curators", extras=extras)
+    install_lamindb(session, branch="main", extras=extras)
     run(session, "uv pip install --system .[dev]")
 
 
