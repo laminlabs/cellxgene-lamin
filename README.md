@@ -1,11 +1,11 @@
 [![pypi](https://img.shields.io/pypi/v/cellxgene-lamin?color=blue&label=pypi%20package)](https://pypi.org/project/cellxgene-lamin)
 
-# cellxgene-lamin: Manage cellxgene metadata using Lamin
+# cellxgene-lamin: Manage cellxgene metadata using LaminDB
 
 Try it out with the public instance `laminlabs/cellxgene`:
 
 - via LaminHub: https://lamin.ai/laminlabs/cellxgene
-- via LaminDB API: `lamin load laminlabs/cellxgene`
+- via LaminDB API: `lamin connect laminlabs/cellxgene`
 
 Reference:
 
