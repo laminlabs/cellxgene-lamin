@@ -63,6 +63,6 @@ def docs(session):
         for path in Path(f"./docs_{group}").glob("*"):
             path.rename(f"./docs/{path.name}")
 
-    run(session, "lamin init --storage ./docsbuild --schema bionty")
+    run(session, "lamin init --storage ./docsbuild --modules bionty")
     build_docs(session, strict=True)
     upload_docs_artifact(aws=True)
