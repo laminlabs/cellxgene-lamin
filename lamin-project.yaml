@@ -1,5 +1,0 @@
-project_name: cellxgene-lamin
-description: Manage cellxgene metadata using LaminDB
-project_slug: cellxgene-lamin
-repository_name: cellxgene-lamin
-package_name: cellxgene_lamin
