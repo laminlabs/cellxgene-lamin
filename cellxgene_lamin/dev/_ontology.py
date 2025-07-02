@@ -10,7 +10,7 @@ def create_ontology_record_from_source(
     ontology_id: str,
     from_orm: Registry,
     target_orm: Registry,
-    public_source: Optional[PublicSource] = None,
+    public_source: PublicSource | None = None,
 ):
     from_record = from_orm.from_public(
         ontology_id=ontology_id, public_source=public_source
