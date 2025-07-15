@@ -33,8 +33,9 @@ def install(session: nox.Session, group: str) -> None:
     extras = ""
     if group == "validator":
         extras = "bionty,jupyter,zarr"
+        run(session, "uv tool install scanpy")
         run(session, "uv pip install --system tiledbsoma")
-        run(session, "uv tool install cellxgene-schema==5.2.2")
+        run(session, "uv tool install cellxgene-schema==5.3.2")
     install_lamindb(session, branch="main", extras=extras)
     run(session, "uv pip install --system .[dev]")
 
