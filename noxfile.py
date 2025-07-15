@@ -27,14 +27,11 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["census", "validator", "docs"],
+    ["validator", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
     extras = ""
-    if group == "census":
-        extras = "bionty,jupyter"
-        run(session, "uv pip install --system tiledbsoma")
-    elif group == "validator":
+    if group == "validator":
         extras = "bionty,jupyter,zarr"
         run(session, "uv pip install --system tiledbsoma")
         run(session, "uv tool install cellxgene-schema==5.2.2")
@@ -66,6 +63,6 @@ def docs(session):
         for path in Path(f"./docs_{group}").glob("*"):
             path.rename(f"./docs/{path.name}")
 
-    run(session, "lamin init --storage ./docsbuild --schema bionty")
+    run(session, "lamin init --storage ./docsbuild --modules bionty")
     build_docs(session, strict=True)
     upload_docs_artifact(aws=True)

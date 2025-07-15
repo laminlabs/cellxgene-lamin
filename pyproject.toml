@@ -17,7 +17,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "lamindb[bionty,aws,zarr,jupyter]>=1.6.2",
+    "lamindb[bionty,zarr,jupyter]>=1.6.2",
     "requests"
 ]
 
