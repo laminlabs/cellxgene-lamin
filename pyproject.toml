@@ -37,7 +37,9 @@ dev = [
 testpaths = [
     "tests",
 ]
-
+filterwarings = [
+    "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning"
+]
 
 [tool.ruff]
 src = ["cellxgene_lamin"]
