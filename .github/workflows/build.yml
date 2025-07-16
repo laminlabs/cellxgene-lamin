@@ -19,7 +19,7 @@ jobs:
         python-version: ["3.12"]
         group:
           - "validator"
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
