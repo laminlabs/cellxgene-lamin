@@ -34,9 +34,9 @@ def install(session: nox.Session, group: str) -> None:
     if group == "validator":
         extras = "bionty,jupyter,zarr"
         run(
-            session, "uv pip install --system tiledbsoma scanpy>=1.11.3"
+            session,
+            "uv pip install --system pronto tiledbsoma cellxgene-schema==5.3.2 scanpy>=1.11.3",
         )  # scanpy pin to prevent scipy installation crashes
-        run(session, "uv tool install cellxgene-schema==5.3.2")
     install_lamindb(session, branch="feature/cellxgene_compat", extras=extras)
     run(session, "uv pip install --system .[dev]")
 
