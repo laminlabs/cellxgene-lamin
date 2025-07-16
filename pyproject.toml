@@ -37,7 +37,7 @@ dev = [
 testpaths = [
     "tests",
 ]
-filterwarings = [
+filterwarnings = [
     "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning"
 ]
 
