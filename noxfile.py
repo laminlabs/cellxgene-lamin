@@ -48,7 +48,7 @@ def install(session: nox.Session, group: str) -> None:
 )
 @nox.session
 def build(session, group):
-    login_testuser1(session)
+    # login_testuser1(session)
     run(session, f"pytest -s ./tests/test_notebooks.py::test_{group}")
 
     # Move executed notebooks temporarily to recover them for docs building
