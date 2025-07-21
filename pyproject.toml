@@ -4,20 +4,20 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "cellxgene_lamin"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 dependencies = [
-    "lamindb[bionty,zarr,jupyter]>=0.77.3",
+    "lamindb[bionty,zarr,jupyter]>=1.6.2",
     "requests"
 ]
 
@@ -37,7 +37,9 @@ dev = [
 testpaths = [
     "tests",
 ]
-
+filterwarnings = [
+    "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning"
+]
 
 [tool.ruff]
 src = ["cellxgene_lamin"]
