@@ -2,17 +2,17 @@ import lamindb as ln
 from lamindb.core._feature_manager import get_accessor_by_registry_
 
 OBS_FEATURES = {
+    "organism": "bionty.Organism",
     "assay": "bionty.ExperimentalFactor",
     "cell_type": "bionty.CellType",
     "development_stage": "bionty.DevelopmentalStage",
     "disease": "bionty.Disease",
-    "donor_id": "core.ULabel",
     "self_reported_ethnicity": "bionty.Ethnicity",
     "sex": "bionty.Phenotype",
-    "suspension_type": "core.ULabel",
     "tissue": "bionty.Tissue",
+    "suspension_type": "core.ULabel",
+    "donor_id": "core.ULabel",
     "tissue_type": "core.ULabel",
-    "organism": "bionty.Organism",
 }
 
 obs_features_records = ln.FeatureSet.filter(name="obs metadata").one().members.lookup()
@@ -30,7 +30,7 @@ for name in OBS_FEATURES.keys():
     FEATURE_TO_ACCESSOR[name] = (accessor, orm)
 
 
-def register_obs_featureset(artifacts):
+def register_obs_featureset(artifacts: ln.Artifact) -> ln.Schema:
     import lamindb as ln
 
     feature_set = ln.FeatureSet.filter(name="obs metadata").one_or_none()
@@ -44,4 +44,5 @@ def register_obs_featureset(artifacts):
         feature_set.save()
 
     feature_set.artifacts.add(*artifacts, through_defaults={"slot": "obs"})
+
     return feature_set
