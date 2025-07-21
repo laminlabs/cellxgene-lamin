@@ -1,9 +1,15 @@
 import pandas as pd
+from lamin_utils import logger
 
 
 def register_genes() -> None:
     import bionty as bt
     import lamindb as ln
+
+    bt.Organism.from_source(
+        name="synthetic construct", source=bt.Source.get("4tsksCMX")
+    ).save()
+    bt.Organism.from_source(name="sars-2", source=bt.Source.get("4tsksCMX")).save()
 
     organisms = bt.Organism.lookup(field=bt.Organism.scientific_name)
     genes_files = {
@@ -15,13 +21,34 @@ def register_genes() -> None:
 
     # register all genes for each organism
     for organism_name, genes_file in genes_files.items():
-        print(f"registering {organism_name} genes")
-        df = pd.read_csv(genes_file, header=None, index_col=0)
+        logger.info(f"registering {organism_name} genes")
         organism_record = getattr(organisms, organism_name)
-        gene_records = bt.Gene.from_values(
-            df.index, field=bt.Gene.ensembl_gene_id, organism=organism_record
-        )
-        ln.save([r for r in gene_records if r._state.adding])
+        if organism_name == "synthetic_construct":
+            df = pd.read_csv(
+                genes_file,
+                header=None,
+                index_col=0,
+                names=["ensembl_gene_id", "symbol", "chromosome", "length", "biotype"],
+            )
+            gene_records = bt.Gene.from_values(
+                df.index,
+                field=bt.Gene.ensembl_gene_id,
+                organism=organism_record,
+                create=True,
+            )
+            for gene in gene_records:
+                gene.symbol = df.loc[gene.ensembl_gene_id].symbol
+                gene.save()
+            ln.save([r for r in gene_records if r._state.adding])
+        elif organism_name == "severe_acute_respiratory_syndrome_coronavirus_2":
+            # currently broken https://github.com/chanzuckerberg/single-cell-curation/issues/1415
+            pass
+        else:
+            df = pd.read_csv(genes_file, header=None, index_col=0)
+            gene_records = bt.Gene.from_values(
+                df.index, field=bt.Gene.ensembl_gene_id, organism=organism_record
+            )
+            ln.save([r for r in gene_records if r._state.adding])
         validated = bt.Gene.validate(
             df.index, field=bt.Gene.ensembl_gene_id, organism=organism_record
         )

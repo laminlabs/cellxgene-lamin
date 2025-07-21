@@ -30,8 +30,6 @@ def curate_organisms(artifacts: Artifact, cxg_datasets: Iterable) -> None:
     import bionty as bt
     import lamindb as ln
 
-    feature_organism = ln.Feature.filter(name="organism").one()
-
     for cxg_dataset in cxg_datasets:
         artifact = artifacts.filter(
             key__contains=cxg_dataset["dataset_id"]
@@ -45,4 +43,4 @@ def curate_organisms(artifacts: Artifact, cxg_datasets: Iterable) -> None:
         organism_records = bt.Organism.filter(
             ontology_id__in=organism_ontology_ids
         ).list()
-        artifact.labels.add(organism_records, feature=feature_organism)
+        artifact.organisms.set(organism_records)
