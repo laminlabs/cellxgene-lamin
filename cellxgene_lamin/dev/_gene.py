@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def register_genes():
+def register_genes() -> None:
     import bionty as bt
     import lamindb as ln
 
@@ -36,9 +36,3 @@ def register_genes():
                 )
             )
         ln.save(new_records)
-
-        # genes_feature_set = ln.FeatureSet(
-        #     features=gene_records + new_records,
-        #     name=f"all {organism_record.name} genes",
-        # )
-        # genes_feature_set.save()
