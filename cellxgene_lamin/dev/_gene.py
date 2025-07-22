@@ -1,8 +1,9 @@
 import pandas as pd
-from lamin_utils import logger
+from rich import print
 
 
 def register_genes() -> None:
+    """Note that this bulk saves genes which can lead to IntegrityErrors."""
     import bionty as bt
     import lamindb as ln
 
@@ -21,7 +22,7 @@ def register_genes() -> None:
 
     # register all genes for each organism
     for organism_name, genes_file in genes_files.items():
-        logger.info(f"registering {organism_name} genes")
+        print(f"[bold orange]registering {organism_name} genes")
         organism_record = getattr(organisms, organism_name)
         if organism_name == "synthetic_construct":
             df = pd.read_csv(
@@ -53,13 +54,16 @@ def register_genes() -> None:
             df.index, field=bt.Gene.ensembl_gene_id, organism=organism_record
         )
         # register legacy genes manually
-        new_records = []
-        for gene_id in df.index[~validated]:
-            new_records.append(
-                bt.Gene(
-                    ensembl_gene_id=gene_id,
-                    symbol=df.loc[gene_id][1],
-                    organism=organism_record,
+        if organism_name == "severe_acute_respiratory_syndrome_coronavirus_2":
+            pass
+        else:
+            new_records = []
+            for gene_id in df.index[~validated]:
+                new_records.append(
+                    bt.Gene(
+                        ensembl_gene_id=gene_id,
+                        symbol=df.loc[gene_id][1],
+                        organism=organism_record,
+                    )
                 )
-            )
-        ln.save(new_records)
+            ln.save(new_records)
