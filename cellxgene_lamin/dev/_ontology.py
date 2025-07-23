@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 
 from bionty.models import PublicSource, SQLRecord
+from rich import print
 
 from ._features import FEATURE_TO_ACCESSOR, OBS_FEATURES
 
@@ -57,7 +58,7 @@ def register_ontology_ids(cxg_datasets: Iterable) -> None:
 
     # register all ontology ids
     for name, terms in ontology_ids.items():
-        print(f"registering {name}")
+        print(f"[bold orange]registering {name}")
         _, orm = FEATURE_TO_ACCESSOR.get(name)
         terms_ids = [t[1] for t in terms]
         records = orm.from_values(terms_ids, field="ontology_id")
@@ -105,7 +106,9 @@ def register_ontology_ids(cxg_datasets: Iterable) -> None:
 
             if len(records) > 0:
                 valid_records = [r for r in records if r is not None]
-                print(f"registered {len(valid_records)} records: {valid_records}")
+                print(
+                    f"[bold orange]registered {len(valid_records)} records: {valid_records}"
+                )
                 ln.save(valid_records)
     ln.settings.creation.search_names = upon_create_search_names
 
