@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 
-from rich import print
+from lamin_utils import logger
 
 
 def register_ulabels(cxg_datasets: Iterable, feature_name: str) -> None:
@@ -21,7 +21,7 @@ def register_ulabels(cxg_datasets: Iterable, feature_name: str) -> None:
         result = records.inspect(labels, mute=True)
         new_records = [ln.ULabel(name=name) for name in result.non_validated]
         ln.save(new_records)
-        print(f"[bold orange]registered {len(new_records)} {feature_name}s")
+        logger.info(f"CELLXGENE: registered {len(new_records)} {feature_name}s")
         is_feature_name.children.add(*new_records)
     elif feature_name == "tissue_type":
         is_tissue_type = ln.ULabel.filter(name="is_tissue_type").one_or_none()

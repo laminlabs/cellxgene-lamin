@@ -23,12 +23,17 @@ def register_organisms(cxg_datasets: Iterable) -> None:
     for record in organisms_records:
         if record.name == "house mouse":
             record.name = "mouse"
+
+    organisms_records.append(
+        bt.Organism.from_source(
+            ontology_id="NCBITaxon:2697049", source=ncbitaxon_source
+        )
+    )
     ln.save(organisms_records)
 
 
 def curate_organisms(artifacts: Artifact, cxg_datasets: Iterable) -> None:
     import bionty as bt
-    import lamindb as ln
 
     for cxg_dataset in cxg_datasets:
         artifact = artifacts.filter(

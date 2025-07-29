@@ -1,5 +1,5 @@
 import pandas as pd
-from rich import print
+from lamin_utils import logger
 
 
 def register_genes() -> None:
@@ -34,7 +34,7 @@ def register_genes() -> None:
         currently_used=False,
         description="GENCODE with ERCC spike-ins",
         url=genes_files["synthetic_construct"],
-    )
+    ).save()
     bt.Gene.add_source(source=source, df=synthetic_df)
 
     sars_2_df = pd.read_csv(
@@ -51,15 +51,17 @@ def register_genes() -> None:
         currently_used=False,
         description="GENCODE of Sars Cov 2",
         url=genes_files.get("severe_acute_respiratory_syndrome_coronavirus_2"),
-    )
+    ).save()
     bt.Gene.add_source(source=source, df=sars_2_df)
 
     organisms = bt.Organism.lookup(field=bt.Organism.scientific_name)
 
     # register all genes for each organism
     for organism_name, genes_file in genes_files.items():
-        print(f"[bold orange]registering {organism_name} genes")
+        logger.info(f"CELLXGENE: registering {organism_name} genes")
         organism_record = getattr(organisms, organism_name)
+        if organism_record.name == "house mouse":
+            organism_record.name = "mouse"
 
         df = pd.read_csv(genes_file, header=None, index_col=0)
         gene_records = bt.Gene.from_values(

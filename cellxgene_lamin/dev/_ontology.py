@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 
 from bionty.models import PublicSource, SQLRecord
-from rich import print
+from lamin_utils import logger
 
 from ._features import FEATURE_TO_ACCESSOR, OBS_FEATURES
 
@@ -58,7 +58,7 @@ def register_ontology_ids(cxg_datasets: Iterable) -> None:
 
     # register all ontology ids
     for name, terms in ontology_ids.items():
-        print(f"[bold orange]registering {name}")
+        logger.info(f"CELLXGENE: registering {name}")
         _, orm = FEATURE_TO_ACCESSOR.get(name)
         terms_ids = [t[1] for t in terms]
         records = orm.from_values(terms_ids, field="ontology_id")
