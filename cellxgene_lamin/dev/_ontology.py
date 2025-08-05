@@ -106,9 +106,7 @@ def register_ontology_ids(cxg_datasets: Iterable) -> None:
 
             if len(records) > 0:
                 valid_records = [r for r in records if r is not None]
-                print(
-                    f"[bold orange]registered {len(valid_records)} records: {valid_records}"
-                )
+                print(f"registered {len(valid_records)} records: {valid_records}")
                 ln.save(valid_records)
     ln.settings.creation.search_names = upon_create_search_names
 
