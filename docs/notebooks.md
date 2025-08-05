@@ -17,8 +17,9 @@ The following notebooks are versioned documents of creating the instance.
 :maxdepth: 1
 :hidden:
 
+notebooks/cencus-release-2025-01-30-LTS
 notebooks/cencus-release-2024-07-01-LTS
-notebooks/census-release-2024-07-01-References.ipynb
+notebooks/census-release-2024-07-01-References
 notebooks/cencus-release-2023-12-15-LTS
 notebooks/census-release-2023-12-06
 notebooks/census-release-2023-11-13
