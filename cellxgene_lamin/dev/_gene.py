@@ -16,6 +16,12 @@ def register_genes() -> None:
 
     # Register missing Organism & Source if necessary
     bt.Organism.from_source(
+        ontology_id="NCBITaxon:9606", source=bt.Source.get("4tsksCMX")
+    ).save()
+    bt.Organism.from_source(
+        ontology_id="NCBITaxon:10090", source=bt.Source.get("4tsksCMX")
+    ).save()
+    bt.Organism.from_source(
         name="synthetic construct", source=bt.Source.get("4tsksCMX")
     ).save()
     bt.Organism.from_source(name="sars-2", source=bt.Source.get("4tsksCMX")).save()
