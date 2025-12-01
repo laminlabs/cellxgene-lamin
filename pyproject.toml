@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "cellxgene_lamin"
 requires-python = ">=3.10"
-authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
+authors = [{name = "Lamin Labs", email = "open-source@lamin.ai"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 classifiers = [
@@ -17,7 +17,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "lamindb[bionty,zarr,jupyter]>=1.6.2",
+    "lamindb[zarr]>=1.6.2",
     "requests"
 ]
 
