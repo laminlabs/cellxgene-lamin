@@ -30,7 +30,9 @@ class _FeatureAccessorMapping:
         for name in OBS_FEATURES.keys():
             feature = getattr(obs_features_records, name)
             accessor = accessors.get(
-                feature._dtype_str[feature._dtype_str.index("[") + 1 : feature._dtype_str.index("]")]
+                feature._dtype_str[
+                    feature._dtype_str.index("[") + 1 : feature._dtype_str.index("]")
+                ]
             )
             orm = getattr(ln.Artifact, accessor).field.model
             if orm == ln.Artifact:
