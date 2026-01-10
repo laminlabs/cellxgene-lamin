@@ -29,7 +29,7 @@ for idx, ds in enumerate(cxg_datasets):
         if first_organism.name == "house mouse":
             first_organism.name = "mouse"
         try:
-            schema = ln.examples.cellxgene.get_cxg_schema(
+            schema = ln.examples.cellxgene.create_cellxgene_schema(
                 schema_version="5.2.0",
                 field_types="ontology_id",
                 organism=first_organism.name,
