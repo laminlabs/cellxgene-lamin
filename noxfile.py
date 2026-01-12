@@ -32,7 +32,6 @@ def lint(session: nox.Session) -> None:
 def install(session: nox.Session, group: str) -> None:
     extras = ""
     if group == "validator":
-        extras = "bionty,jupyter,zarr"
         run(
             session,
             "uv pip install --system pronto tiledbsoma scanpy>=1.11.3",
