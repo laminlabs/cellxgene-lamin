@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 import nox
-from laminci import upload_docs_artifact
+from laminci import convert_executable_md_files, upload_docs_artifact
 from laminci.nox import (
     build_docs,
     install_lamindb,
@@ -46,8 +46,8 @@ def install(session: nox.Session, group: str) -> None:
     "group",
     ["census", "validator"],
 )
-@nox.session
 def build(session, group):
+    convert_executable_md_files()
     login_testuser1(session)
     run(session, f"pytest -s ./tests/test_notebooks.py::test_{group}")
 
