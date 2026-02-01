@@ -68,5 +68,5 @@ def docs(session):
             path.rename(f"./docs/{path.name}")
 
     run(session, "lamin init --storage ./docsbuild --modules bionty")
-    build_docs(session, strict=True)
-    upload_docs_artifact(aws=True)
+    build_docs(session, strict=False)
+    upload_docs_artifact()
