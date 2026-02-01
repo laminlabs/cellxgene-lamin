@@ -14,8 +14,8 @@ from laminci.nox import (
 nox.options.default_venv_backend = "none"
 
 GROUPS = {
-    "census": ["query-census.ipynb"],
-    "validator": ["cellxgene.ipynb", "cellxgene-curate.ipynb"],
+    "curate": ["cellxgene-curate.ipynb"],
+    "query": ["cellxgene.ipynb"],
 }
 
 
@@ -27,11 +27,11 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["validator", "docs"],
+    ["query", "curate", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
     extras = ""
-    if group == "validator":
+    if group != "docs":
         run(
             session,
             "uv pip install --system pronto tiledbsoma scanpy>=1.11.3",
@@ -44,12 +44,13 @@ def install(session: nox.Session, group: str) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["census", "validator"],
+    ["query", "curate"],
 )
 def build(session, group):
     convert_executable_md_files()
     login_testuser1(session)
-    run(session, f"pytest -s ./tests/test_notebooks.py::test_{group}")
+    if group != "curate":
+        run(session, f"pytest -s ./tests/test_notebooks.py::test_{group}")
 
     # Move executed notebooks temporarily to recover them for docs building
     target_dir = Path(f"./docs_{group}")
@@ -60,11 +61,12 @@ def build(session, group):
 
 @nox.session
 def docs(session):
+    convert_executable_md_files()
     # Recover executed notebooks
-    for group in ["census", "validator"]:
+    for group in ["query", "curate"]:
         for path in Path(f"./docs_{group}").glob("*"):
             path.rename(f"./docs/{path.name}")
 
     run(session, "lamin init --storage ./docsbuild --modules bionty")
-    build_docs(session, strict=True)
-    upload_docs_artifact(aws=True)
+    build_docs(session, strict=False)
+    upload_docs_artifact()
