@@ -61,6 +61,7 @@ def build(session, group):
 
 @nox.session
 def docs(session):
+    convert_executable_md_files()
     # Recover executed notebooks
     for group in ["query", "curate"]:
         for path in Path(f"./docs_{group}").glob("*"):
