@@ -37,6 +37,7 @@ ln.Artifact("…", schema=schema).save()  # annotation (re-validates ontologies,
 ```python
 import lamindb as ln
 import bionty as bt
+import re
 
 ln.track()
 ```
@@ -139,6 +140,12 @@ adata.obs
 ```python
 # Add missing assay column
 adata.obs["assay_ontology_term_id"] = "EFO:0005684"
+
+def get_source_from_feature(feature: ln.Feature) -> bt.Source | None:
+    if match := re.search(r"source__uid='([^']+)'", feature.dtype_as_str):
+        return bt.Source.get(uid=match.group(1))
+    return None
+
 # Add `entity_ontology_term_id` columns by translating names to ontology IDs
 standardization_map = {
     "self_reported_ethnicity": (
@@ -149,8 +156,11 @@ standardization_map = {
 }
 
 for col, (bt_class, new_col) in standardization_map.items():
+    feature = cxg_schema.slots["obs"].features.filter(name=new_col).one()
+    source = get_source_from_feature(feature)
+
     adata.obs[new_col] = bt_class.standardize(
-        adata.obs[col], field="name", return_field="ontology_id"
+        adata.obs[col], field="name", return_field="ontology_id", source=source
     )
 # Drop the name columns because CELLxGENE disallows them
 adata.obs = adata.obs.drop(columns=list(standardization_map.keys()))
