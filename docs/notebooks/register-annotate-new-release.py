@@ -47,7 +47,7 @@ print(f"Found {len(cxg_datasets)} datasets from CELLxGENE API")
 # Build lookup: dataset_id -> cxg metadata
 cxg_lookup: dict[str, dict[str, Any]] = {ds["dataset_id"]: ds for ds in cxg_datasets}
 
-artifacts_previous = ln.Artifact.filter(version_tag=PREVIOUS_CENSUS_VERSION).all()
+artifacts_previous = ln.Artifact.filter(version_tag=PREVIOUS_CENSUS_VERSION)
 print(f"Found {artifacts_previous.count()} artifacts from previous release")
 
 h5ad_paths = list(ln.UPath(CENSUS_S3PATH).glob("*.h5ad"))
@@ -69,15 +69,14 @@ for path in h5ad_paths:
     artifact = ln.Artifact(path, **kwargs)
     artifact.version_tag = NEW_CENSUS_VERSION
 
-    # Annotate with CXG metadata
     if dataset_id in cxg_lookup:
         artifact.n_observations = cxg_lookup[dataset_id]["cell_count"]
         artifact.description = cxg_lookup[dataset_id]["title"]
 
     artifact.save()
 
-artifacts = ln.Artifact.filter(key__contains=NEW_CENSUS_VERSION).all()
-print(f"Registered {len(artifacts)} artifacts")
+new_afs = ln.Artifact.filter(key__contains=NEW_CENSUS_VERSION)
+print(f"Registered {len(new_afs)} artifacts")
 
 if args.limit is None:
     # -------------------------------------------------------------------
@@ -85,7 +84,7 @@ if args.limit is None:
     # -------------------------------------------------------------------
 
     collection = ln.Collection(
-        artifacts,
+        new_afs,
         key="cellxgene-census",
         revises=ln.Collection.filter(
             key="cellxgene-census", version_tag=PREVIOUS_CENSUS_VERSION
@@ -102,7 +101,7 @@ if args.limit is None:
             f"cell-census/{NEW_CENSUS_VERSION}/h5ads/{dataset['dataset_id']}.h5ad"
             for dataset in collection_meta["datasets"]
         ]
-        collection_artifacts = artifacts.filter(key__in=keys).all()
+        collection_artifacts = new_afs.filter(key__in=keys)
         if collection_artifacts.count() > 0:
             previous_collection = ln.Collection.filter(
                 reference=collection_meta["collection_id"],
@@ -120,8 +119,7 @@ if args.limit is None:
 
             collection_record = ln.Collection(collection_artifacts, **collection_kwargs)
             collection_record.version_tag = NEW_CENSUS_VERSION
-            if collection_record._state.adding:
-                collection_record.save()
+            collection_record.save()
 
     ln.settings.creation.search_names = True
 
@@ -133,23 +131,20 @@ if args.limit is None:
     previous_soma = ln.Artifact.filter(
         description=f"Census {PREVIOUS_CENSUS_VERSION}"
     ).one()
-    soma_artifact = ln.Artifact(
+    new_soma_af = ln.Artifact(
         soma_path,
         description=f"Census {NEW_CENSUS_VERSION}",
         revises=previous_soma,
     )
-    soma_artifact.version_tag = NEW_CENSUS_VERSION
-    soma_artifact.save()
-    print(soma_artifact)
+    new_soma_af.version_tag = NEW_CENSUS_VERSION
+    new_soma_af.save()
+    print(new_soma_af)
 
 # ---------------------------------------------------------------------------
 # 4. Annotate artifacts (validate & curate)
 # ---------------------------------------------------------------------------
 
 cxg_datasets_to_annotate: list[dict[str, Any]] = cxg_datasets
-if args.limit is not None:
-    cxg_datasets_to_annotate = cxg_datasets_to_annotate[: args.limit]
-
 for idx, ds in enumerate(cxg_datasets_to_annotate):
     if idx % 10 == 0:
         print(f"Annotating dataset {idx} of {len(cxg_datasets_to_annotate)}")
