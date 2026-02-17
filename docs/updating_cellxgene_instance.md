@@ -44,10 +44,10 @@ Commit to cellxgene-lamin repo.
 
 ### 4. Test registration (smoke test)
 
-Run with --limit 1 against a local LaminDB instance:
+Run with `--smoke` against a local LaminDB instance:
 
 ```bash
-python register-annotate-new-release.py --new 2025-11-08 --previous 2025-01-30 --limit 1
+python register-annotate-new-release.py --new 2025-11-08 --previous 2025-01-30 --smoke
 ```
 
 Verify: schema validation passes, all `_ontology_term_id` features are populated, the artifact otype is AnnData.

@@ -15,12 +15,14 @@ parser.add_argument(
     "--space", type=str, default=None, help="Space to use for registration"
 )
 parser.add_argument(
-    "--limit",
-    type=int,
-    default=None,
-    help="Limit number of datasets to process. Skips Collection & soma registration.",
+    "--smoke",
+    action="store_true",
+    help="Limits number of datasets to process to 2. Skips Collection & soma registration.",
 )
 args = parser.parse_args()
+
+if args.smoke:
+    ln.examples.cellxgene.save_cellxgene_defaults()
 
 NEW_CENSUS_VERSION = args.new
 PREVIOUS_CENSUS_VERSION = args.previous
@@ -42,20 +44,20 @@ if args.track:
 # ---------------------------------------------------------------------------
 
 cxg_datasets: list[dict[str, Any]] = get_datasets_from_cxg()  # type: ignore
-print(f"Found {len(cxg_datasets)} datasets from CELLxGENE API")
 
 # Build lookup: dataset_id -> cxg metadata
 cxg_lookup: dict[str, dict[str, Any]] = {ds["dataset_id"]: ds for ds in cxg_datasets}
 
 artifacts_previous = ln.Artifact.filter(version_tag=PREVIOUS_CENSUS_VERSION)
-print(f"Found {artifacts_previous.count()} artifacts from previous release")
 
 h5ad_paths = list(ln.UPath(CENSUS_S3PATH).glob("*.h5ad"))
-if args.limit is not None:
-    h5ad_paths = h5ad_paths[: args.limit]
+if args.smoke:
+    h5ad_paths = h5ad_paths[:2]
 
+registered_dataset_ids: set[str] = set()
 for path in h5ad_paths:
     dataset_id = path.stem
+    registered_dataset_ids.add(dataset_id)
 
     # Check for previous version to pass to constructor
     artifact_previous = artifacts_previous.filter(
@@ -76,9 +78,9 @@ for path in h5ad_paths:
     artifact.save()
 
 new_afs = ln.Artifact.filter(key__contains=NEW_CENSUS_VERSION)
-print(f"Registered {len(new_afs)} artifacts")
+print(f"Registered {len(h5ad_paths)} Artifacts")
 
-if args.limit is None:
+if not args.smoke:
     # -------------------------------------------------------------------
     # 2. Register collections
     # -------------------------------------------------------------------
@@ -146,6 +148,8 @@ if args.limit is None:
 
 cxg_datasets_to_annotate: list[dict[str, Any]] = cxg_datasets
 for idx, ds in enumerate(cxg_datasets_to_annotate):
+    if ds["dataset_id"] not in registered_dataset_ids:
+        continue
     if idx % 10 == 0:
         print(f"Annotating dataset {idx} of {len(cxg_datasets_to_annotate)}")
 
