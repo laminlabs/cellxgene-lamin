@@ -36,35 +36,33 @@ A new entry appears on the [LTS Census data releases page](https://chanzuckerber
 3. Re-run the notebook end-to-end.
 4. Verify the instance metadata reflects the new schema version.
 
-### 3. Add registration notebook
+### 3. Registration & annotation script
 
-1. Duplicate the most recent registration notebook in [`cellxgene-lamin/docs/notebooks/`](https://github.com/laminlabs/cellxgene-lamin/tree/main/docs/notebooks).
-2. Name it to reflect the LTS version, e.g. `register_2025-11-08.ipynb`.
-3. The notebook should:
-   - Load the updated schema via `create_cellxgene_schema()`.
-   - Register all datasets from the new Census release as Artifacts & collections.
-   - Annotate with schema.
-   - Attach references/citations.
-   - Create census store
-4. Commit to `cellxgene-lamin` repo.
+The script lives at [github.com/laminlabs/cellxgene](cellxgene-lamin/docs/notebooks/register-annotate-new-release.py).
+It handles: registering all datasets as Artifacts with revision chains, registering Collections, creating the census soma store, and annotating with schema.
+Commit to cellxgene-lamin repo.
 
 ### 4. Test registration (smoke test)
 
-1. Pick 1-2 datasets from the new release (ideally one standard, one edge-case like multi-value `disease` or spatial).
-   Don't run the full loop initially.
-2. Run the registration notebook against them in a local LaminDB instance.
-3. Verify:
-   - Schema validation passes without errors.
-   - All `_ontology_term_id` features are populated.
-   - References are attached.
-   - The artifact `otype` is `AnnData`.
+Run with --limit 1 against a local LaminDB instance:
 
-### 5. Run full registration on AWS SageMaker
+```bash
+python register-annotate-new-release.py --new 2025-11-08 --previous 2025-01-30 --limit 1
+```
 
-1. Launch a SageMaker notebook instance with sufficient resources.
-2. Execute the registration notebook against the full dataset list.
-3. Expected runtime: ~24 hours.
-4. Monitor for failures; log any datasets that error out for manual follow-up.
+Verify: schema validation passes, all `_ontology_term_id` features are populated, the artifact otype is AnnData.
+
+5. Run full registration on AWS SageMaker
+
+Launch a SageMaker instance with sufficient resources.
+Execute the full run:
+
+```bash
+python register-annotate-new-release.py --new 2025-11-08 --previous 2025-01-30 --track --space cellxgene
+```
+
+Expected runtime: ~24 hours+.
+Monitor for failures; log any datasets that error out for manual follow-up.
 
 ### 6. Post-run verification
 
