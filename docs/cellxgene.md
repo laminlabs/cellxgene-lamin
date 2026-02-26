@@ -180,7 +180,7 @@ collection.artifacts.to_dataframe()
 Let's now look at the collection that corresponds to a `cellxgene-census` release of `.h5ad` artifacts.
 
 ```python
-collection = db.Collection.get(key="cellxgene-census", version="2025-01-30")
+collection = db.Collection.get(key="cellxgene-census", version="2025-11-08")
 collection
 ```
 
@@ -226,7 +226,7 @@ value_filter
 Query for the `tiledbsoma` array store that contains all concatenated expression data. It's a new dataset produced by concatenating all `AnnData`-like artifacts in the Census collection.
 
 ```python
-census_artifact = db.Artifact.get(key="cell-census/2025-01-30/soma")
+census_artifact = db.Artifact.get(key="cell-census/2025-11-08/soma")
 ```
 
 Run the slicing operation.
