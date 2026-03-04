@@ -10,7 +10,7 @@ from cellxgene_lamin.dev._cxg_rest_api import (
     get_collections_from_cxg,
 )
 
-ln.settings.sync_git_repo = "https://github.com/ishitajain9717/cellxgene.git"
+ln.settings.sync_git_repo = "https://github.com/laminlabs/cellxgene-lamin"
 
 
 parser = argparse.ArgumentParser()
@@ -157,6 +157,7 @@ if not args.smoke:
     # ---------------------------------------------------------------------------
     # 3. Register the soma store
     # ---------------------------------------------------------------------------
+
     logger.info("Registering soma store")
     soma_path = f"s3://cellxgene-data-public/cell-census/{NEW_CENSUS_VERSION}/soma"
     previous_soma = ln.Artifact.filter(
@@ -174,6 +175,7 @@ if not args.smoke:
 # ---------------------------------------------------------------------------
 # 4. Annotate artifacts (validate & curate)
 # ---------------------------------------------------------------------------
+
 logger.info("Starting annotation of artifacts")
 cxg_datasets_to_annotate: list[dict[str, Any]] = cxg_datasets  # type: ignore
 for idx, ds in enumerate(cxg_datasets_to_annotate):
@@ -263,6 +265,3 @@ for idx, ds in enumerate(cxg_datasets_to_annotate):
 
 if args.track:
     ln.finish()
-    logger.info("Run finished and tracked")
-
-logger.info("Script completed successfully")
