@@ -258,6 +258,11 @@ for idx, ds in enumerate(cxg_datasets_to_annotate):
                 f"skipping dataset_id={ds['dataset_id']}: feature not in dataframe"
             )
             continue
+        elif "no Organism found in source for the given" in error_msg:
+            logger.warning(
+                f"skipping dataset_id={ds['dataset_id']}: ontology not in dataframe"
+            )
+            continue
         else:
             logger.error(
                 f"unhandled ValidationError for dataset_id={ds['dataset_id']}: {error_msg}"
