@@ -1,8 +1,8 @@
 from typing import Any
 import argparse
-import logging
 import lamindb as ln
 import bionty as bt
+from lamin_utils import logger
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
 from cellxgene_lamin.dev._cxg_rest_api import (
@@ -11,20 +11,6 @@ from cellxgene_lamin.dev._cxg_rest_api import (
 )
 
 ln.settings.sync_git_repo = "https://github.com/ishitajain9717/cellxgene.git"
-# ---------------------------------------------------------------------------
-# Logging — overwrites log file on each run
-# ---------------------------------------------------------------------------
-LOG_FILE = "annotate-register-new-release.log"
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_FILE, mode="w"),  # mode="w" overwrites each run
-        logging.StreamHandler(),  # also print to stdout
-    ],
-)
-logger = logging.getLogger(__name__)
 
 
 parser = argparse.ArgumentParser()
