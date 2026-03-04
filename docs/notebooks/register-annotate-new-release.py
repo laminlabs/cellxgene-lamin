@@ -29,12 +29,12 @@ parser.add_argument(
 
 args = parser.parse_args()
 logger.info(
-    f"Starting run | new={args.new} | previous={args.previous} | smoke={args.smoke} | track={args.track}"
+    f"starting run | new={args.new} | previous={args.previous} | smoke={args.smoke} | track={args.track}"
 )
 
 if args.smoke:
     ln.examples.cellxgene.save_cellxgene_defaults()
-    logger.info("Smoke mode: saved cellxgene defaults")
+    logger.info("smoke mode: saved cellxgene defaults")
 
 
 NEW_CENSUS_VERSION = args.new
@@ -51,19 +51,19 @@ if args.track:
     if args.space is not None:
         track_kwargs["space"] = args.space
     ln.track(**track_kwargs)
-    logger.info(f"Tracking enabled | space={args.space}")
+    logger.info(f"tracking enabled | space={args.space}")
 
 cxg_datasets: dict[str, Any] = get_datasets_from_cxg()
-logger.info(f"Found {len(cxg_datasets)} datasets from CellxGene")
+logger.info(f"found {len(cxg_datasets)} datasets from CellxGene")
 
 cxg_lookup: dict[str, dict[str, Any]] = {ds["dataset_id"]: ds for ds in cxg_datasets}  # type: ignore
 previous_artifacts = ln.Artifact.filter(version_tag=PREVIOUS_CENSUS_VERSION)
 h5ad_paths = list(ln.UPath(CENSUS_S3PATH).glob("*.h5ad"))
-logger.info(f"Found {len(h5ad_paths)} h5ad paths in {CENSUS_S3PATH}")
+logger.info(f"found {len(h5ad_paths)} h5ad paths in {CENSUS_S3PATH}")
 
 if args.smoke:
     h5ad_paths = h5ad_paths[:2]
-    logger.info("Smoke mode: limiting to 2 h5ad paths")
+    logger.info("smoke mode: limiting to 2 h5ad paths")
 
 # ---------------------------------------------------------------------------
 # 1. Register artifacts
@@ -78,9 +78,9 @@ for h5ad_path in h5ad_paths:
     kwargs: dict[str, Any] = {}
     if artifact_previous is not None:
         kwargs["revises"] = artifact_previous
-        logger.info(f"Revising existing artifact for dataset_id={dataset_id}")
+        logger.info(f"revising existing artifact for dataset_id={dataset_id}")
     else:
-        logger.info(f"Registering new artifact for dataset_id={dataset_id}")
+        logger.info(f"registering new artifact for dataset_id={dataset_id}")
 
     artifact = ln.Artifact(h5ad_path, **kwargs)
     artifact.version_tag = NEW_CENSUS_VERSION
@@ -92,14 +92,14 @@ for h5ad_path in h5ad_paths:
 
 new_afs = ln.Artifact.filter(key__contains=NEW_CENSUS_VERSION)
 logger.info(
-    f"Registered {len(h5ad_paths)} artifacts for census version {NEW_CENSUS_VERSION}"
+    f"registered {len(h5ad_paths)} artifacts for census version {NEW_CENSUS_VERSION}"
 )
 
 if not args.smoke:
     # ---------------------------------------------------------------------------
     # 2. Register collections
     # ---------------------------------------------------------------------------
-    logger.info("Registering top-level cellxgene-census collection")
+    logger.info("registering top-level cellxgene-census collection")
     collection = ln.Collection(
         new_afs,
         key="cellxgene-census",
@@ -109,10 +109,10 @@ if not args.smoke:
     )
     collection.version_tag = NEW_CENSUS_VERSION
     collection.save()
-    logger.info("Saved top-level collection")
+    logger.info("saved top-level collection")
 
     cxg_collections: list[dict[str, Any]] = get_collections_from_cxg()  # type: ignore
-    logger.info(f"Found {len(cxg_collections)} CellxGene collections")
+    logger.info(f"found {len(cxg_collections)} CellxGene collections")
 
     ln.settings.creation.search_names = False
     for collection_meta in cxg_collections:
@@ -137,11 +137,11 @@ if not args.smoke:
             if previous_collection is not None:
                 collection_kwargs["revises"] = previous_collection
                 logger.info(
-                    f"Revising collection: {collection_meta['name']} (id={collection_meta['collection_id']})"
+                    f"revising collection: {collection_meta['name']} (id={collection_meta['collection_id']})"
                 )
             else:
                 logger.info(
-                    f"Creating new collection: {collection_meta['name']} (id={collection_meta['collection_id']})"
+                    f"creating new collection: {collection_meta['name']} (id={collection_meta['collection_id']})"
                 )
 
             collection_record = ln.Collection(collection_artifacts, **collection_kwargs)
@@ -149,7 +149,7 @@ if not args.smoke:
             collection_record.save()
         else:
             logger.warning(
-                f"No matching artifacts for collection: {collection_meta['name']} (id={collection_meta['collection_id']}), skipping"
+                f"no matching artifacts for collection: {collection_meta['name']} (id={collection_meta['collection_id']}), skipping"
             )
 
     ln.settings.creation.search_names = True
@@ -158,7 +158,7 @@ if not args.smoke:
     # 3. Register the soma store
     # ---------------------------------------------------------------------------
 
-    logger.info("Registering soma store")
+    logger.info("registering soma store")
     soma_path = f"s3://cellxgene-data-public/cell-census/{NEW_CENSUS_VERSION}/soma"
     previous_soma = ln.Artifact.filter(
         description=f"Census {PREVIOUS_CENSUS_VERSION}"
@@ -170,25 +170,25 @@ if not args.smoke:
     )
     new_soma_af.version_tag = NEW_CENSUS_VERSION
     new_soma_af.save()
-    logger.info(f"Saved soma artifact: {new_soma_af}")
+    logger.info(f"saved soma artifact: {new_soma_af}")
 
 # ---------------------------------------------------------------------------
 # 4. Annotate artifacts (validate & curate)
 # ---------------------------------------------------------------------------
 
-logger.info("Starting annotation of artifacts")
+logger.info("starting annotation of artifacts")
 cxg_datasets_to_annotate: list[dict[str, Any]] = cxg_datasets  # type: ignore
 for idx, ds in enumerate(cxg_datasets_to_annotate):
     if ds["dataset_id"] not in registered_ids:
         continue
     if idx % 10 == 0:
-        logger.info(f"Annotating dataset {idx} of {len(cxg_datasets_to_annotate)}")
+        logger.info(f"annotating dataset {idx} of {len(cxg_datasets_to_annotate)}")
 
     af = ln.Artifact.filter(
         Q(key__contains=ds["dataset_id"]) & Q(key__contains=NEW_CENSUS_VERSION)
     ).one_or_none()
     if af is None:
-        logger.warning(f"No artifact found for dataset_id={ds['dataset_id']}, skipping")
+        logger.warning(f"no artifact found for dataset_id={ds['dataset_id']}, skipping")
         continue
 
     organism_ontology_ids = [
@@ -210,14 +210,14 @@ for idx, ds in enumerate(cxg_datasets_to_annotate):
         )
     except ObjectDoesNotExist:
         logger.warning(
-            f"Skipping dataset_id={ds['dataset_id']}: bt.Source not found for "
+            f"skipping dataset_id={ds['dataset_id']}: bt.Source not found for "
             f"organism={first_organism.name}. "
-            f"Run bt.Gene.add_source(organism='{first_organism.name}') to fix."
+            f"run bt.Gene.add_source(organism='{first_organism.name}') to fix."
         )
         continue
     except IndexError:
         logger.warning(
-            f"Skipping dataset_id={ds['dataset_id']}: IndexError while creating "
+            f"skipping dataset_id={ds['dataset_id']}: IndexError while creating "
             f"schema for organism={first_organism.name}"
         )
         continue
@@ -227,13 +227,13 @@ for idx, ds in enumerate(cxg_datasets_to_annotate):
     try:
         curator.validate()
         curator.save_artifact()
-        logger.info(f"Successfully validated and saved dataset_id={ds['dataset_id']}")
+        logger.info(f"successfully validated and saved dataset_id={ds['dataset_id']}")
 
     except ln.errors.ValidationError as e:
         error_msg = str(e)
         if "not validated in feature 'tissue_ontology_term_id'" in error_msg:
             logger.warning(
-                f"Skipping dataset_id={ds['dataset_id']}: tissue_ontology_term_id not validated"
+                f"skipping dataset_id={ds['dataset_id']}: tissue_ontology_term_id not validated"
             )
             continue
         elif (
@@ -241,7 +241,7 @@ for idx, ds in enumerate(cxg_datasets_to_annotate):
             in error_msg
         ):
             logger.warning(
-                f"Skipping dataset_id={ds['dataset_id']}: self_reported_ethnicity_ontology_term_id not validated"
+                f"skipping dataset_id={ds['dataset_id']}: self_reported_ethnicity_ontology_term_id not validated"
             )
             continue
         elif (
@@ -249,17 +249,17 @@ for idx, ds in enumerate(cxg_datasets_to_annotate):
             in error_msg
         ):
             logger.warning(
-                f"Skipping dataset_id={ds['dataset_id']}: disease_ontology_term_id not validated"
+                f"skipping dataset_id={ds['dataset_id']}: disease_ontology_term_id not validated"
             )
             continue
         elif "not in dataframe" in error_msg:
             logger.warning(
-                f"Skipping dataset_id={ds['dataset_id']}: feature not in dataframe"
+                f"skipping dataset_id={ds['dataset_id']}: feature not in dataframe"
             )
             continue
         else:
             logger.error(
-                f"Unhandled ValidationError for dataset_id={ds['dataset_id']}: {error_msg}"
+                f"unhandled ValidationError for dataset_id={ds['dataset_id']}: {error_msg}"
             )
             continue
 
