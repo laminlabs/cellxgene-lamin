@@ -32,11 +32,6 @@ logger.info(
     f"starting run | new={args.new} | previous={args.previous} | smoke={args.smoke} | track={args.track}"
 )
 
-if args.smoke:
-    ln.examples.cellxgene.save_cellxgene_defaults()
-    logger.info("smoke mode: saved cellxgene defaults")
-
-
 NEW_CENSUS_VERSION = args.new
 PREVIOUS_CENSUS_VERSION = args.previous
 CENSUS_S3PATH = f"s3://cellxgene-data-public/cell-census/{NEW_CENSUS_VERSION}/h5ads"
@@ -52,6 +47,12 @@ if args.track:
         track_kwargs["space"] = args.space
     ln.track(**track_kwargs)
     logger.info(f"tracking enabled | space={args.space}")
+
+
+if args.smoke:
+    ln.examples.cellxgene.save_cellxgene_defaults()
+    logger.info("smoke mode: saved cellxgene defaults")
+
 
 cxg_datasets: dict[str, Any] = get_datasets_from_cxg()
 logger.info(f"found {len(cxg_datasets)} datasets from CellxGene")
