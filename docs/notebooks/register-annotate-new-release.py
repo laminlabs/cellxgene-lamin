@@ -230,7 +230,7 @@ for idx, ds in enumerate(cxg_datasets_to_annotate):
         curator.save_artifact()
         logger.info(f"successfully validated and saved dataset_id={ds['dataset_id']}")
 
-    except ln.errors.ValidationError as e:
+    except (ln.errors.ValidationError, ObjectDoesNotExist) as e:
         error_msg = str(e)
         if "not validated in feature 'tissue_ontology_term_id'" in error_msg:
             logger.warning(
