@@ -22,11 +22,6 @@ To build similar data assets in-house:
 ```
 
 ```python
-# pip install lamindb
-!lamin init --modules bionty --storage ./test-cellxgene
-```
-
-```python
 import lamindb as ln
 ```
 
