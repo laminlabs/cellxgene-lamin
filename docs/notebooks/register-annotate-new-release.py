@@ -74,7 +74,8 @@ for h5ad_path in h5ad_paths:
     dataset_id = h5ad_path.stem
     registered_ids.add(dataset_id)
     artifact_previous = ln.Artifact.filter(
-        key__endswith=f"{dataset_id}.h5ad"
+        key__endswith=f"{dataset_id}.h5ad",
+        is_latest=True,
     ).one_or_none()
     kwargs: dict[str, Any] = {}
     if artifact_previous is not None:
