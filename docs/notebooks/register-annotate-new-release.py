@@ -75,6 +75,7 @@ for h5ad_path in h5ad_paths:
     registered_ids.add(dataset_id)
     artifact_previous = ln.Artifact.filter(
         key__endswith=f"{dataset_id}.h5ad",
+        key__contains=PREVIOUS_CENSUS_VERSION,
         is_latest=True,
     ).one()
     kwargs: dict[str, Any] = {}
