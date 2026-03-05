@@ -206,9 +206,7 @@ for idx, ds in enumerate(cxg_datasets_to_annotate):
 
     try:
         schema = ln.examples.cellxgene.create_cellxgene_schema(
-            field_types="ontology_id",
-            organism=first_organism.name,
-            schema_version="6.0.0",
+            field_types="ontology_id", organism=first_organism.name
         )
     except ObjectDoesNotExist:
         logger.warning(
