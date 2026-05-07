@@ -48,9 +48,7 @@ def install(session: nox.Session, group: str) -> None:
 )
 def build(session, group):
     convert_executable_md_files()
-    login_testuser1(session)
-    if group != "curate":
-        run(session, f"pytest -s ./tests/test_notebooks.py::test_{group}")
+    run(session, f"pytest -s ./tests/test_notebooks.py::test_{group}")
 
     # Move executed notebooks temporarily to recover them for docs building
     target_dir = Path(f"./docs_{group}")
