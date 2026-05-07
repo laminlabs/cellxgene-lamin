@@ -14,6 +14,6 @@ def test_query():
         test.execute_notebooks(DOCS / filename, write=True)
 
 
-def test_validator():
+def test_curate():
     for filename in GROUPS["curate"]:
         test.execute_notebooks(DOCS / filename, write=True)
