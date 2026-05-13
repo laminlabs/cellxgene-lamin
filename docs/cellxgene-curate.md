@@ -19,7 +19,7 @@ To ingest validate & annotated datasets adhering to a CELLxGENE Schema, call
 using a shell, and then
 
 ```python
-schema = ln.examples.cellxgene.create_cellxgene_schema(version="5.2.0")
+schema = ln.examples.cellxgene.create_cellxgene_schema()
 ln.Artifact("…", schema=schema).save()  # annotation (re-validates ontologies, but not some other details)
 ```
 ````
@@ -47,7 +47,7 @@ ln.track()
 As a first step, we generate the specific CELLxGENE schema which adds missing sources to the instance:
 
 ```python
-cxg_schema = ln.examples.cellxgene.create_cellxgene_schema("5.2.0")
+cxg_schema = ln.examples.cellxgene.create_cellxgene_schema()
 ```
 
 ```python
