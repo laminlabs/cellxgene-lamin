@@ -12,7 +12,7 @@ This guide shows how to curate an AnnData object against the latest [CELLxGENE s
 To ingest validate & annotated datasets adhering to a CELLxGENE Schema, call
 
 ```bash
-!cellxgene-schema --version # should print 5.2.0
+!cellxgene-schema --version # should print latest version
 !cellxgene-schema validate small_cxg_curated.h5ad  # validation
 ```
 
@@ -63,6 +63,7 @@ cxg_schema.slots["var"].describe()
 ```python
 cxg_schema.slots["obs"].describe()
 ```
+
 ```python
 cxg_schema.slots["uns"].describe()
 ```
