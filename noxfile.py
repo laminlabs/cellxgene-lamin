@@ -36,7 +36,7 @@ def install(session: nox.Session, group: str) -> None:
             session,
             "uv pip install --system pronto tiledbsoma scanpy>=1.11.3",
         )  # scanpy pin to prevent scipy installation crashes
-        run(session, "uv tool install cellxgene-schema==5.2.2")
+        run(session, "uv tool install cellxgene-schema")
     install_lamindb(session, branch="main", extras=extras)
     run(session, "uv pip install --system .[dev]")
 

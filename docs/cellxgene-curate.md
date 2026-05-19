@@ -6,13 +6,12 @@ execute_via: python
 
 # Curate `AnnData` based on the CELLxGENE schema
 
-This guide shows how to curate an AnnData object against the [CELLxGENE schema v5.2.0](https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.2.0/schema.md).
+This guide shows how to curate an AnnData object against the latest [CELLxGENE schema](https://github.com/chanzuckerberg/single-cell-curation/tree/main/schema).
 
 ````{admonition} Summary
 To ingest validate & annotated datasets adhering to a CELLxGENE Schema, call
 
 ```bash
-!cellxgene-schema --version # should print 5.2.0
 !cellxgene-schema validate small_cxg_curated.h5ad  # validation
 ```
 
@@ -29,7 +28,7 @@ ln.Artifact("…", schema=schema).save()  # annotation (re-validates ontologies,
 ```python
 # pip install lamindb pronto
 # cellxgene-schema has pinned dependencies. Therefore we recommend installing it into a separate environment using `uv` or `pipx`
-# uv tool install cellxgene-schema==5.2.3
+# uv tool install cellxgene-schema
 
 !lamin init --storage ./test-cellxgene-curate --modules bionty
 ```
@@ -37,7 +36,6 @@ ln.Artifact("…", schema=schema).save()  # annotation (re-validates ontologies,
 ```python
 import lamindb as ln
 import bionty as bt
-import re
 
 ln.track()
 ```
@@ -54,7 +52,7 @@ cxg_schema = ln.examples.cellxgene.create_cellxgene_schema()
 cxg_schema.describe()
 ```
 
-The schema has two components:
+The schema has three slots: `var`, `obs`, and `uns` (dataset-level metadata such as organism):
 
 ```python
 cxg_schema.slots["var"].describe()
@@ -64,18 +62,25 @@ cxg_schema.slots["var"].describe()
 cxg_schema.slots["obs"].describe()
 ```
 
+```python
+cxg_schema.slots["uns"].describe()
+```
+
 In the following, we will validate a dataset the CELLxGENE schema and curate it.
 
 ## Validate and curate metadata
 
 Let's start with an AnnData object that we would like to curate.
-We are writing it to disk to run [CZI's cellxgene-schema CLI tool](https://github.com/chanzuckerberg/single-cell-curation) which verifies whether an on-disk h5ad dataset adheres all requirements of CELLxGENE including the CELLxGENE schema.
+We write it to disk to run [CZI's cellxgene-schema CLI tool](https://github.com/chanzuckerberg/single-cell-curation), which checks whether an h5ad adheres to the CELLxGENE schema.
+
+In the current schema, `organism_ontology_term_id` belongs in `adata.uns`, not `obs`.
+The example dataset still places it in `obs` for backward compatibility, so we move it:
 
 ```python
 adata = ln.examples.datasets.small_dataset3_cellxgene(
     with_obs_typo=True, with_var_typo=True
 )
-adata.uns["organism_ontology_term_id"] = "NCBITaxon:9606"
+adata.uns["organism_ontology_term_id"] = adata.obs["organism_ontology_term_id"].iloc[0]
 adata.obs = adata.obs.drop(columns=["organism_ontology_term_id"])
 adata.write_h5ad("small_cxg.h5ad")
 adata
@@ -140,32 +145,16 @@ adata.obs
 ```
 
 ```python
-# Add missing assay column
+# Add missing ontology-term-id columns (translate human-readable names via bionty)
 adata.obs["assay_ontology_term_id"] = "EFO:0005684"
-
-def get_source_from_feature(feature: ln.Feature) -> bt.Source | None:
-    if match := re.search(r"source__uid='([^']+)'", feature.dtype_as_str):
-        return bt.Source.get(uid=match.group(1))
-    return None
-
-# Add `entity_ontology_term_id` columns by translating names to ontology IDs
-standardization_map = {
-    "self_reported_ethnicity": (
-        bt.Ethnicity,
-        "self_reported_ethnicity_ontology_term_id",
-    ),
-    "cell_type": (bt.CellType, "cell_type_ontology_term_id"),
-}
-
-for col, (bt_class, new_col) in standardization_map.items():
-    feature = cxg_schema.slots["obs"].features.filter(name=new_col).one()
-    source = get_source_from_feature(feature)
-
-    adata.obs[new_col] = bt_class.standardize(
-        adata.obs[col], field="name", return_field="ontology_id", source=source
-    )
-# Drop the name columns because CELLxGENE disallows them
-adata.obs = adata.obs.drop(columns=list(standardization_map.keys()))
+adata.obs["cell_type_ontology_term_id"] = bt.CellType.standardize(
+    adata.obs["cell_type"], field="name", return_field="ontology_id"
+)
+adata.obs["self_reported_ethnicity_ontology_term_id"] = bt.Ethnicity.standardize(
+    adata.obs["self_reported_ethnicity"], field="name", return_field="ontology_id"
+)
+# Drop name columns; the CELLxGENE validator adds human-readable names from ontology IDs
+adata.obs = adata.obs.drop(columns=["cell_type", "self_reported_ethnicity"])
 ```
 
 ```python
