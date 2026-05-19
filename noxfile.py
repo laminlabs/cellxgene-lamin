@@ -36,7 +36,7 @@ def install(session: nox.Session, group: str) -> None:
             session,
             "uv pip install --system pronto tiledbsoma scanpy>=1.11.3",
         )  # scanpy pin to prevent scipy installation crashes
-        run(session, "uv tool install cellxgene-schema==5.2.2")
+        run(session, "uv tool install cellxgene-schema")
     install_lamindb(session, branch="main", extras=extras)
     run(session, "uv pip install --system .[dev]")
 
@@ -48,9 +48,7 @@ def install(session: nox.Session, group: str) -> None:
 )
 def build(session, group):
     convert_executable_md_files()
-    login_testuser1(session)
-    if group != "curate":
-        run(session, f"pytest -s ./tests/test_notebooks.py::test_{group}")
+    run(session, f"pytest -s ./tests/test_notebooks.py::test_{group}")
 
     # Move executed notebooks temporarily to recover them for docs building
     target_dir = Path(f"./docs_{group}")

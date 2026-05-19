@@ -6,20 +6,20 @@ execute_via: python
 
 # Curate `AnnData` based on the CELLxGENE schema
 
-This guide shows how to curate an AnnData object against the [CELLxGENE schema v5.2.0](https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.2.0/schema.md).
+This guide shows how to curate an AnnData object against the latest [CELLxGENE schema](https://github.com/chanzuckerberg/single-cell-curation/tree/main/schema).
 
 ````{admonition} Summary
 To ingest validate & annotated datasets adhering to a CELLxGENE Schema, call
 
 ```bash
-!cellxgene-schema --version # should print 5.2.0
+!cellxgene-schema --version # should print latest version
 !cellxgene-schema validate small_cxg_curated.h5ad  # validation
 ```
 
 using a shell, and then
 
 ```python
-schema = ln.examples.cellxgene.create_cellxgene_schema(version="5.2.0")
+schema = ln.examples.cellxgene.create_cellxgene_schema()
 ln.Artifact("…", schema=schema).save()  # annotation (re-validates ontologies, but not some other details)
 ```
 ````
@@ -47,14 +47,14 @@ ln.track()
 As a first step, we generate the specific CELLxGENE schema which adds missing sources to the instance:
 
 ```python
-cxg_schema = ln.examples.cellxgene.create_cellxgene_schema("5.2.0")
+cxg_schema = ln.examples.cellxgene.create_cellxgene_schema()
 ```
 
 ```python
 cxg_schema.describe()
 ```
 
-The schema has two components:
+The schema has three components:
 
 ```python
 cxg_schema.slots["var"].describe()
@@ -62,6 +62,10 @@ cxg_schema.slots["var"].describe()
 
 ```python
 cxg_schema.slots["obs"].describe()
+```
+
+```python
+cxg_schema.slots["uns"].describe()
 ```
 
 In the following, we will validate a dataset the CELLxGENE schema and curate it.
@@ -75,6 +79,8 @@ We are writing it to disk to run [CZI's cellxgene-schema CLI tool](https://githu
 adata = ln.examples.datasets.small_dataset3_cellxgene(
     with_obs_typo=True, with_var_typo=True
 )
+adata.uns["organism_ontology_term_id"] = adata.obs["organism_ontology_term_id"].iloc[0]
+adata.obs = adata.obs.drop(columns=["organism_ontology_term_id"])
 adata.write_h5ad("small_cxg.h5ad")
 adata
 ```
