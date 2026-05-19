@@ -75,6 +75,8 @@ We are writing it to disk to run [CZI's cellxgene-schema CLI tool](https://githu
 adata = ln.examples.datasets.small_dataset3_cellxgene(
     with_obs_typo=True, with_var_typo=True
 )
+adata.uns["organism_ontology_term_id"] = "NCBITaxon:9606"
+adata.obs = adata.obs.drop(columns=["organism_ontology_term_id"])
 adata.write_h5ad("small_cxg.h5ad")
 adata
 ```
