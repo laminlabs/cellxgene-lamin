@@ -13,6 +13,122 @@ from cellxgene_lamin.dev._cxg_rest_api import (
 ln.settings.sync_git_repo = "https://github.com/laminlabs/cellxgene-lamin"
 
 
+def cleanup_broken_pre_release_artifacts(pre_release_label: Any) -> None:
+    """Delete any existing pre-release artifacts that are no longer accessible."""
+    existing = ln.Artifact.filter(ulabels=pre_release_label)
+    logger.info(
+        f"checking {existing.count()} existing pre-release artifacts for breakage"
+    )
+    for af in existing:
+        try:
+            af.open()
+        except Exception as e:
+            logger.warning(f"broken, deleting | key={af.key} | {e}")
+            af.delete(permanent=True)
+
+
+def register_pre_release_collections(
+    cxg_collections: list[dict[str, Any]],
+    registered_artifacts: dict[str, Any],
+    pre_release_label: Any,
+) -> None:
+    """Register CellxGene collections that are not yet in any LTS release."""
+    ln.settings.creation.search_names = False
+    for collection_meta in cxg_collections:
+        # skip if this collection already exists in LTS (a version-tagged record)
+        in_lts = ln.Collection.filter(
+            reference=collection_meta["collection_id"],
+            version_tag__isnull=False,
+        ).exists()
+        if in_lts:
+            logger.info(
+                f"collection already in LTS, skipping | id={collection_meta['collection_id']}"
+            )
+            continue
+
+        member_artifacts = [
+            registered_artifacts[d["dataset_id"]]
+            for d in collection_meta["datasets"]
+            if d["dataset_id"] in registered_artifacts
+        ]
+        if not member_artifacts:
+            continue
+
+        previous_collection = ln.Collection.filter(
+            reference=collection_meta["collection_id"],
+            ulabels=pre_release_label,
+        ).one_or_none()
+
+        collection_kwargs: dict[str, Any] = {
+            "key": f"pre-release/{collection_meta['name']}",
+            "description": collection_meta["doi"],
+            "reference": collection_meta["collection_id"],
+            "reference_type": "CELLxGENE Collection ID",
+        }
+        if previous_collection is not None:
+            collection_kwargs["revises"] = previous_collection
+            logger.info(f"revising pre-release collection: {collection_meta['name']}")
+        else:
+            logger.info(f"creating pre-release collection: {collection_meta['name']}")
+
+        collection_record = ln.Collection(member_artifacts, **collection_kwargs)
+        collection_record.save()
+        collection_record.ulabels.add(pre_release_label)
+
+    ln.settings.creation.search_names = True
+
+
+def register_pre_release_artifacts(
+    cxg_lookup: dict[str, dict[str, Any]],
+    pre_release_label: Any,
+    cxc: Any,
+    smoke: bool = False,
+) -> tuple[set[str], dict[str, Any]]:
+    """Register datasets from the latest census not already in LaminDB."""
+    registered_ids: set[str] = set()
+    registered_artifacts: dict[str, Any] = {}
+
+    for dataset_id, ds in cxg_lookup.items():
+        # skip if already registered in LaminDB (already in LTS or a prior run)
+        if (
+            ln.Artifact.filter(key__endswith=f"{dataset_id}.h5ad").one_or_none()
+            is not None
+        ):
+            logger.info(f"already registered, skipping | dataset_id={dataset_id}")
+            continue
+
+        # new datasets are NOT in the versioned S3 path — resolve via latest census
+        try:
+            uri = cxc.get_source_h5ad_uri(dataset_id, census_version="latest")["uri"]
+        except Exception as e:
+            logger.warning(
+                f"could not resolve h5ad uri | dataset_id={dataset_id} | {e}"
+            )
+            continue
+
+        artifact = ln.Artifact(uri, description=ds["title"])
+
+        # check the file is accessible before registering
+        try:
+            artifact.open()
+        except Exception as e:
+            logger.warning(f"broken dataset, skipping | dataset_id={dataset_id} | {e}")
+            continue
+
+        artifact.n_observations = ds["cell_count"]
+        artifact.save()
+        artifact.ulabels.add(pre_release_label)
+
+        registered_ids.add(dataset_id)
+        registered_artifacts[dataset_id] = artifact
+        logger.info(f"registered pre-release | dataset_id={dataset_id}")
+
+        if smoke and len(registered_ids) >= 2:
+            break
+
+    return registered_ids, registered_artifacts
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--new", required=True, help="New census version")
 parser.add_argument(
@@ -89,114 +205,26 @@ if args.pre_release:
     logger.info("pre-release ULabel ready")
 
     # cleanup: delete broken pre-release artifacts from previous runs
-    existing_pre_release = ln.Artifact.filter(ulabels=pre_release_label)
-    logger.info(
-        f"checking {existing_pre_release.count()} existing pre-release artifacts for breakage"
-    )
-    for af in existing_pre_release:
-        try:
-            af.open()
-        except Exception as e:
-            logger.warning(f"broken, deleting | key={af.key} | {e}")
-            af.delete(permanent=True)
+    cleanup_broken_pre_release_artifacts(pre_release_label)
 
     # register new datasets
-    for dataset_id, ds in cxg_lookup.items():
-        # skip if already registered in LaminDB (already in LTS or a prior run)
-        if (
-            ln.Artifact.filter(key__endswith=f"{dataset_id}.h5ad").one_or_none()
-            is not None
-        ):
-            logger.info(f"already registered, skipping | dataset_id={dataset_id}")
-            continue
-
-        # new datasets are NOT in the versioned S3 path — resolve via latest census
-        try:
-            uri = cxc.get_source_h5ad_uri(dataset_id, census_version="latest")["uri"]
-        except Exception as e:
-            logger.warning(
-                f"could not resolve h5ad uri | dataset_id={dataset_id} | {e}"
-            )
-            continue
-
-        artifact = ln.Artifact(uri, description=ds["title"])
-
-        # check the file is accessible before registering
-        try:
-            artifact.open()
-        except Exception as e:
-            logger.warning(f"broken dataset, skipping | dataset_id={dataset_id} | {e}")
-            continue
-
-        artifact.n_observations = ds["cell_count"]
-        artifact.save()
-        artifact.ulabels.add(pre_release_label)
-
-        registered_ids.add(dataset_id)
-        registered_artifacts[dataset_id] = artifact
-        logger.info(f"registered pre-release | dataset_id={dataset_id}")
-
-        if args.smoke and len(registered_ids) >= 2:
-            break
-
+    registered_ids, registered_artifacts = register_pre_release_artifacts(
+        cxg_lookup=cxg_lookup,
+        pre_release_label=pre_release_label,
+        cxc=cxc,
+        smoke=args.smoke,
+    )
     logger.info(f"registered {len(registered_ids)} pre-release artifacts")
 
     # -----------------------------------------------------------------------
     # 2. Register pre-release collections (only collections NOT already in LTS)
     # -----------------------------------------------------------------------
     if registered_artifacts and not args.smoke:
-        cxg_collections: list[dict[str, Any]] = get_collections_from_cxg()  # type: ignore
-        logger.info(f"found {len(cxg_collections)} CellxGene collections")
-
-        ln.settings.creation.search_names = False
-        for collection_meta in cxg_collections:
-            # skip if this collection already exists in LTS (a version-tagged record)
-            in_lts = ln.Collection.filter(
-                reference=collection_meta["collection_id"],
-                version_tag__isnull=False,
-            ).exists()
-            if in_lts:
-                logger.info(
-                    f"collection already in LTS, skipping | id={collection_meta['collection_id']}"
-                )
-                continue
-
-            # brand-new collection → all its registered datasets are pre-release
-            member_artifacts = [
-                registered_artifacts[d["dataset_id"]]
-                for d in collection_meta["datasets"]
-                if d["dataset_id"] in registered_artifacts
-            ]
-            if not member_artifacts:
-                continue
-
-            # chain weekly pre-release reruns of the same collection
-            previous_collection = ln.Collection.filter(
-                reference=collection_meta["collection_id"],
-                ulabels=pre_release_label,
-            ).one_or_none()
-
-            collection_kwargs: dict[str, Any] = {
-                "key": f"pre-release/{collection_meta['name']}",
-                "description": collection_meta["doi"],
-                "reference": collection_meta["collection_id"],
-                "reference_type": "CELLxGENE Collection ID",
-            }
-            if previous_collection is not None:
-                collection_kwargs["revises"] = previous_collection
-                logger.info(
-                    f"revising pre-release collection: {collection_meta['name']}"
-                )
-            else:
-                logger.info(
-                    f"creating pre-release collection: {collection_meta['name']}"
-                )
-
-            collection_record = ln.Collection(member_artifacts, **collection_kwargs)
-            collection_record.save()
-            collection_record.ulabels.add(pre_release_label)
-
-        ln.settings.creation.search_names = True
+        register_pre_release_collections(
+            cxg_collections=get_collections_from_cxg(),  # type: ignore[arg-type]
+            registered_artifacts=registered_artifacts,
+            pre_release_label=pre_release_label,
+        )
 
 else:
     # -----------------------------------------------------------------------
@@ -255,7 +283,7 @@ else:
         collection.save()
         logger.info("saved top-level collection")
 
-        cxg_collections = get_collections_from_cxg()  # type: ignore
+        cxg_collections: list[dict[str, Any]] = get_collections_from_cxg()  # type: ignore[assignment]
         logger.info(f"found {len(cxg_collections)} CellxGene collections")
 
         ln.settings.creation.search_names = False
