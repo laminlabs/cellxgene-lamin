@@ -46,14 +46,22 @@ def register_pre_release_artifacts(
     registered_ids: set[str] = set()
     registered_artifacts: dict[str, Any] = {}
 
-    for dataset_id, ds in cxg_lookup.items():
-        if (
-            ln.Artifact.filter(key__endswith=f"{dataset_id}.h5ad").one_or_none()
-            is not None
-        ):
-            logger.info(f"already registered, skipping | dataset_id={dataset_id}")
-            continue
+    existing_dataset_ids = {
+        key.rsplit("/", 1)[-1].removesuffix(".h5ad")
+        for key in ln.Artifact.filter(key__endswith=".h5ad").values_list(
+            "key", flat=True
+        )
+    }
+    logger.info(f"found {len(existing_dataset_ids)} already-registered datasets")
 
+    cxg_lookup_filtered = {
+        dataset_id: ds
+        for dataset_id, ds in cxg_lookup.items()
+        if dataset_id not in existing_dataset_ids
+    }
+    logger.info(f"{len(cxg_lookup_filtered)} datasets to register")
+
+    for dataset_id, ds in cxg_lookup_filtered.items():
         try:
             uri = cxc.get_source_h5ad_uri(dataset_id, census_version="latest")["uri"]
         except Exception as e:
@@ -63,13 +71,6 @@ def register_pre_release_artifacts(
             continue
 
         artifact = ln.Artifact(uri, description=ds["title"])
-
-        try:
-            artifact.open()
-        except Exception as e:
-            logger.warning(f"broken dataset, skipping | dataset_id={dataset_id} | {e}")
-            continue
-
         artifact.n_observations = ds["cell_count"]
         artifact.save()
         artifact.ulabels.add(pre_release_label)
@@ -90,13 +91,18 @@ def register_pre_release_collections(
     pre_release_label: Any,
 ) -> None:
     """Register CellxGene collections that are not yet in any LTS release."""
+    lts_collection_ids = set(
+        ln.Collection.filter(version_tag__isnull=False).values_list(
+            "reference", flat=True
+        )
+    )
+    existing_pre_release = {
+        c.reference: c for c in ln.Collection.filter(ulabels=pre_release_label)
+    }
+
     ln.settings.creation.search_names = False
     for collection_meta in cxg_collections:
-        in_lts = ln.Collection.filter(
-            reference=collection_meta["collection_id"],
-            version_tag__isnull=False,
-        ).exists()
-        if in_lts:
+        if collection_meta["collection_id"] in lts_collection_ids:
             logger.info(
                 f"collection already in LTS, skipping | id={collection_meta['collection_id']}"
             )
@@ -110,10 +116,7 @@ def register_pre_release_collections(
         if not member_artifacts:
             continue
 
-        previous_collection = ln.Collection.filter(
-            reference=collection_meta["collection_id"],
-            ulabels=pre_release_label,
-        ).one_or_none()
+        previous_collection = existing_pre_release.get(collection_meta["collection_id"])
 
         collection_kwargs: dict[str, Any] = {
             "key": f"pre-release/{collection_meta['name']}",
@@ -141,7 +144,40 @@ def _annotate_artifacts(
     pre_release_label: Any = None,
 ) -> None:
     """Validate and curate registered artifacts."""
-    logger.info("starting annotation of artifacts")
+    logger.important("starting annotation of artifacts")
+
+    # bulk query: fetch all organism records needed across all datasets at once
+    all_organism_ontology_ids = {
+        organism["ontology_term_id"]
+        for ds in cxg_datasets
+        if ds["dataset_id"] in registered_ids
+        for organism in ds["organism"]
+    }
+    organism_lookup: dict[str, Any] = {
+        o.ontology_id: o
+        for o in bt.Organism.filter(ontology_id__in=all_organism_ontology_ids)
+    }
+
+    # pre-build schemas per unique organism — at most K requests (K = unique organisms)
+    schema_cache: dict[str, Any] = {}
+    for o in organism_lookup.values():
+        name = "mouse" if o.name == "house mouse" else o.name
+        if name in schema_cache:
+            continue
+        try:
+            schema_cache[name] = ln.examples.cellxgene.create_cellxgene_schema(
+                field_types="ontology_id", organism=name
+            )
+        except ObjectDoesNotExist:
+            logger.warning(
+                f"no schema for organism={name}: bt.Source not found. "
+                f"run bt.Gene.add_source(organism='{name}') to fix."
+            )
+        except IndexError:
+            logger.warning(
+                f"no schema for organism={name}: IndexError while creating schema"
+            )
+
     for idx, ds in enumerate(cxg_datasets):
         if ds["dataset_id"] not in registered_ids:
             continue
@@ -167,9 +203,11 @@ def _annotate_artifacts(
         organism_ontology_ids = [
             organism["ontology_term_id"] for organism in ds["organism"]
         ]
-        organism_records = bt.Organism.filter(
-            ontology_id__in=organism_ontology_ids
-        ).to_list()
+        organism_records = [
+            organism_lookup[oid]
+            for oid in organism_ontology_ids
+            if oid in organism_lookup
+        ]
 
         if not organism_records:
             logger.warning(
@@ -177,31 +215,19 @@ def _annotate_artifacts(
             )
             continue
         first_organism = organism_records[0]
-        if first_organism.name == "house mouse":
-            first_organism.name = "mouse"
+        organism_name = (
+            "mouse" if first_organism.name == "house mouse" else first_organism.name
+        )
 
-        try:
-            schema = ln.examples.cellxgene.create_cellxgene_schema(
-                field_types="ontology_id", organism=first_organism.name
-            )
-        except ObjectDoesNotExist:
+        schema = schema_cache.get(organism_name)
+        if schema is None:
             logger.warning(
-                f"skipping dataset_id={ds['dataset_id']}: bt.Source not found for "
-                f"organism={first_organism.name}. "
-                f"run bt.Gene.add_source(organism='{first_organism.name}') to fix."
-            )
-            continue
-        except IndexError:
-            logger.warning(
-                f"skipping dataset_id={ds['dataset_id']}: IndexError while creating "
-                f"schema for organism={first_organism.name}"
+                f"skipping dataset_id={ds['dataset_id']}: no schema for organism={organism_name}"
             )
             continue
 
-        curator = ln.curators.AnnDataCurator(af, schema)
         try:
-            curator.validate()
-            curator.save_artifact()
+            ln.Artifact.from_anndata(af, schema=schema).save()
             logger.info(
                 f"successfully validated and saved dataset_id={ds['dataset_id']}"
             )
@@ -244,27 +270,15 @@ def _annotate_artifacts(
 # ---------------------------------------------------------------------------
 
 
+@ln.flow("Rrq1bb328HH4")
 def ingest_lts(
     new: str,
     previous: str | None = None,
-    track: bool = False,
-    space: str | None = None,
     smoke: bool = False,
 ) -> None:
     """Register a full LTS census release into LaminDB."""
-    logger.info(
-        f"ingest-lts | new={new} | previous={previous} | smoke={smoke} | track={track}"
-    )
+    logger.info(f"ingest-lts | new={new} | previous={previous} | smoke={smoke}")
     census_s3_path = f"s3://cellxgene-data-public/cell-census/{new}/h5ads"
-
-    if track:
-        track_kwargs: dict[str, Any] = {
-            "params": {"new_census_version": new, "previous_census_version": previous}
-        }
-        if space is not None:
-            track_kwargs["space"] = space
-        ln.track("Rrq1bb328HH4", **track_kwargs)
-        logger.info(f"tracking enabled | space={space}")
 
     if smoke:
         ln.examples.cellxgene.save_cellxgene_defaults()
@@ -382,29 +396,16 @@ def ingest_lts(
     # 4. Annotate
     _annotate_artifacts(cxg_datasets, registered_ids, new_census_version=new)
 
-    if track:
-        ln.finish()
 
-
+@ln.flow("Rrq1bb328HH4")
 def ingest_pre_release(
     new: str,
-    track: bool = False,
-    space: str | None = None,
     smoke: bool = False,
 ) -> None:
     """Register datasets from the latest weekly census not yet in LaminDB."""
     import cellxgene_census as cxc
 
-    logger.info(f"ingest-pre-release | new={new} | smoke={smoke} | track={track}")
-
-    if track:
-        track_kwargs: dict[str, Any] = {
-            "params": {"new_census_version": new, "pre_release": True}
-        }
-        if space is not None:
-            track_kwargs["space"] = space
-        ln.track("Rrq1bb328HH4", **track_kwargs)
-        logger.info(f"tracking enabled | space={space}")
+    logger.info(f"ingest-pre-release | new={new} | smoke={smoke}")
 
     if smoke:
         ln.examples.cellxgene.save_cellxgene_defaults()
@@ -450,9 +451,6 @@ def ingest_pre_release(
         pre_release_label=pre_release_label,
     )
 
-    if track:
-        ln.finish()
-
 
 # ---------------------------------------------------------------------------
 # CLI
@@ -467,26 +465,18 @@ def cxg_lamin() -> None:
 @cxg_lamin.command("ingest-lts")
 @click.option("--new", required=True, help="New census version")
 @click.option("--previous", default=None, help="Previous census version")
-@click.option("--track", is_flag=True, help="Track this run with LaminDB")
-@click.option("--space", default=None, help="LaminDB space to use")
 @click.option("--smoke", is_flag=True, help="Limit to 2 datasets, skip collections")
-def ingest_lts_cmd(
-    new: str, previous: str | None, track: bool, space: str | None, smoke: bool
-) -> None:
+def ingest_lts_cmd(new: str, previous: str | None, smoke: bool) -> None:
     """Register a full LTS census release."""
-    ingest_lts(new=new, previous=previous, track=track, space=space, smoke=smoke)
+    ingest_lts(new=new, previous=previous, smoke=smoke)
 
 
 @cxg_lamin.command("ingest-pre-release")
 @click.option("--new", required=True, help="New census version")
-@click.option("--track", is_flag=True, help="Track this run with LaminDB")
-@click.option("--space", default=None, help="LaminDB space to use")
 @click.option("--smoke", is_flag=True, help="Limit to 2 datasets, skip collections")
-def ingest_pre_release_cmd(
-    new: str, track: bool, space: str | None, smoke: bool
-) -> None:
+def ingest_pre_release_cmd(new: str, smoke: bool) -> None:
     """Register pre-release datasets from the latest weekly census."""
-    ingest_pre_release(new=new, track=track, space=space, smoke=smoke)
+    ingest_pre_release(new=new, smoke=smoke)
 
 
 def main() -> None:
