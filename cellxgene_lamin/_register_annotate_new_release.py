@@ -54,22 +54,32 @@ def register_pre_release_artifacts(
     }
     logger.info(f"found {len(existing_dataset_ids)} already-registered datasets")
 
+    # one bulk census read: get all census dataset IDs and their h5ad URIs
+    with cxc.open_soma(census_version="latest") as census:
+        census_df = (
+            census["census_info"]["datasets"]
+            .read()
+            .concat()
+            .to_pandas()[["dataset_id", "dataset_h5ad_path"]]
+        )
+    census_uri_map: dict[str, str] = dict(
+        zip(census_df["dataset_id"], census_df["dataset_h5ad_path"], strict=False)
+    )
+    logger.info(f"found {len(census_uri_map)} datasets in census")
+
     cxg_lookup_filtered = {
         dataset_id: ds
         for dataset_id, ds in cxg_lookup.items()
-        if dataset_id not in existing_dataset_ids
+        if dataset_id not in existing_dataset_ids and dataset_id in census_uri_map
     }
     logger.info(f"{len(cxg_lookup_filtered)} datasets to register")
 
-    for dataset_id, ds in cxg_lookup_filtered.items():
-        try:
-            uri = cxc.get_source_h5ad_uri(dataset_id, census_version="latest")["uri"]
-        except Exception as e:
-            logger.warning(
-                f"could not resolve h5ad uri | dataset_id={dataset_id} | {e}"
-            )
-            continue
+    items = list(cxg_lookup_filtered.items())
+    if smoke:
+        items = items[:2]
 
+    for dataset_id, ds in items:
+        uri = census_uri_map[dataset_id]
         artifact = ln.Artifact(uri, description=ds["title"])
         artifact.n_observations = ds["cell_count"]
         artifact.save()
@@ -78,9 +88,6 @@ def register_pre_release_artifacts(
         registered_ids.add(dataset_id)
         registered_artifacts[dataset_id] = artifact
         logger.info(f"registered pre-release | dataset_id={dataset_id}")
-
-        if smoke and len(registered_ids) >= 2:
-            break
 
     return registered_ids, registered_artifacts
 
