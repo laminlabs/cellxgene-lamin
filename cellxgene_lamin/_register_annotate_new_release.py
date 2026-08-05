@@ -56,15 +56,17 @@ def register_pre_release_artifacts(
 
     # one bulk census read: get all census dataset IDs and their h5ad URIs
     with cxc.open_soma(census_version="latest") as census:
+        h5ad_base = census.uri.replace("/soma", "/h5ads").rstrip("/")
         census_df = (
             census["census_info"]["datasets"]
             .read()
             .concat()
             .to_pandas()[["dataset_id", "dataset_h5ad_path"]]
         )
-    census_uri_map: dict[str, str] = dict(
-        zip(census_df["dataset_id"], census_df["dataset_h5ad_path"], strict=False)
-    )
+    census_uri_map: dict[str, str] = {
+        row["dataset_id"]: f"{h5ad_base}/{row['dataset_h5ad_path']}"
+        for _, row in census_df.iterrows()
+    }
     logger.info(f"found {len(census_uri_map)} datasets in census")
 
     cxg_lookup_filtered = {
