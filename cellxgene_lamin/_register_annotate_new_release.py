@@ -402,8 +402,9 @@ def ingest_lts(
         new_soma_af.save()
         logger.info(f"saved soma artifact: {new_soma_af}")
 
-    # 4. Annotate
-    _annotate_artifacts(cxg_datasets, registered_ids, new_census_version=new)
+    # 4. Annotate (skipped in smoke mode)
+    if not smoke:
+        _annotate_artifacts(cxg_datasets, registered_ids, new_census_version=new)
 
 
 @ln.flow("Rrq1bb328HH4")
@@ -452,13 +453,14 @@ def ingest_pre_release(
             pre_release_label=pre_release_label,
         )
 
-    # 4. Annotate
-    _annotate_artifacts(
-        cxg_datasets,
-        registered_ids,
-        new_census_version=new,
-        pre_release_label=pre_release_label,
-    )
+    # 4. Annotate (skipped in smoke mode)
+    if not smoke:
+        _annotate_artifacts(
+            cxg_datasets,
+            registered_ids,
+            new_census_version=new,
+            pre_release_label=pre_release_label,
+        )
 
 
 # ---------------------------------------------------------------------------
