@@ -22,7 +22,7 @@ LTS_PREVIOUS = "2025-01-30"
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_lamindb():
-    ln.setup.init(storage="./testdb")
+    ln.setup.init(storage="./testdb", module="bionty")
     yield
     shutil.rmtree("./testdb")
     ln.setup.delete("testdb", force=True)
