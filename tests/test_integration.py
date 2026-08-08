@@ -83,3 +83,36 @@ def test_smoke_ingest_pre_release():
         assert dataset_id not in lts_dataset_ids, (
             f"dataset {dataset_id} is in LTS but was registered as pre-release"
         )
+
+
+# ---------------------------------------------------------------------------
+# Test 3: annotation links tissue and cell_type labels to the artifact
+# ---------------------------------------------------------------------------
+
+
+def test_annotation_links_tissue_and_cell_type_labels():
+    """Annotation: after curating a pre-release artifact, tissue and cell_type labels are linked."""
+    from cellxgene_lamin.dev._cxg_rest_api import get_datasets_from_cxg
+
+    pre_release_label = ln.ULabel.filter(name="pre-release").one_or_none()
+    assert pre_release_label is not None, "run test_smoke_ingest_pre_release first"
+
+    afs = list(ln.Artifact.filter(ulabels=pre_release_label))
+    assert afs, "no pre-release artifacts found to annotate"
+
+    # annotate only the first artifact
+    af = afs[0]
+    dataset_id = af.key.split("/")[-1].replace(".h5ad", "")
+
+    cxg_datasets = get_datasets_from_cxg()
+    _mod._annotate_artifacts(
+        cxg_datasets=cxg_datasets,
+        registered_ids={dataset_id},
+        new_census_version=LTS_NEW,
+        pre_release_label=pre_release_label,
+    )
+
+    # re-fetch from DB after annotation
+    af = ln.Artifact.get(uid=af.uid)
+    assert af.cell_types.count() > 0, "no cell_type labels linked after annotation"
+    assert af.tissues.count() > 0, "no tissue labels linked after annotation"

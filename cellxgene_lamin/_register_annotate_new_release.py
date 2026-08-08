@@ -236,7 +236,9 @@ def _annotate_artifacts(
             continue
 
         try:
-            ln.Artifact.from_anndata(af, schema=schema).save()
+            curator = ln.curators.AnnDataCurator(af, schema)
+            curator.validate()
+            curator.save_artifact(revises=af)
             logger.info(
                 f"successfully validated and saved dataset_id={ds['dataset_id']}"
             )
