@@ -88,7 +88,7 @@ adata
 Initially, the `cellxgene-schema` validator of CZI does not pass and we need to curate the dataset.
 
 ```bash
-MPLBACKEND=agg uvx cellxgene-schema validate small_cxg.h5ad
+uvx cellxgene-schema validate small_cxg.h5ad
 ```
 
 CELLxGENE requires all observations to be annotated.
@@ -216,8 +216,9 @@ To validate the now curated AnnData object using [CZI's cellxgene-schema CLI too
 adata.write("small_cxg_curated.h5ad")
 ```
 
+Now validation passes:
+
 ```bash
-# %%bash -e
 MPLBACKEND=agg uvx cellxgene-schema validate small_cxg_curated.h5ad
 ```
 
