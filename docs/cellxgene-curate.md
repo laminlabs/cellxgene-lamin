@@ -85,12 +85,6 @@ adata.write_h5ad("small_cxg.h5ad")
 adata
 ```
 
-Initially, the `cellxgene-schema` validator of CZI does not pass and we need to curate the dataset.
-
-```bash
-uvx cellxgene-schema validate small_cxg.h5ad
-```
-
 CELLxGENE requires all observations to be annotated.
 If information for a specific column like `disease_ontology_term_id` is not available, CELLxGENE requires to fall back to default values like "normal" or "unknown".
 Let's save these defaults to the instance using {func}`lamindb.examples.cellxgene.save_cellxgene_defaults`:
