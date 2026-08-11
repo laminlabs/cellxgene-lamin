@@ -12,8 +12,8 @@ This guide shows how to curate an AnnData object against the latest [CELLxGENE s
 To ingest validate & annotated datasets adhering to a CELLxGENE Schema, call
 
 ```bash
-!cellxgene-schema --version # should print latest version
-!cellxgene-schema validate small_cxg_curated.h5ad  # validation
+cellxgene-schema --version # should print 5.2.0
+cellxgene-schema validate small_cxg_curated.h5ad  # validation
 ```
 
 using a shell, and then
@@ -26,20 +26,18 @@ ln.Artifact("…", schema=schema).save()  # annotation (re-validates ontologies,
 
 <!-- #endregion -->
 
-```python
+```bash
 # pip install lamindb pronto
 # cellxgene-schema has pinned dependencies. Therefore we recommend installing it into a separate environment using `uv` or `pipx`
 # uv tool install cellxgene-schema==5.2.3
 
-!lamin init --storage ./test-cellxgene-curate --modules bionty
+lamin init --storage ./test-cellxgene-curate --modules bionty
 ```
 
 ```python
 import lamindb as ln
 import bionty as bt
 import re
-
-ln.track()
 ```
 
 ## The CELLxGENE schema
@@ -83,12 +81,6 @@ adata.uns["organism_ontology_term_id"] = adata.obs["organism_ontology_term_id"].
 adata.obs = adata.obs.drop(columns=["organism_ontology_term_id"])
 adata.write_h5ad("small_cxg.h5ad")
 adata
-```
-
-Initially, the `cellxgene-schema` validator of CZI does not pass and we need to curate the dataset.
-
-```python
-!MPLBACKEND=agg uvx cellxgene-schema validate small_cxg.h5ad
 ```
 
 CELLxGENE requires all observations to be annotated.
@@ -216,9 +208,10 @@ To validate the now curated AnnData object using [CZI's cellxgene-schema CLI too
 adata.write("small_cxg_curated.h5ad")
 ```
 
-```python
-# %%bash -e
-!MPLBACKEND=agg uvx cellxgene-schema validate small_cxg_curated.h5ad
+Now validation passes:
+
+```bash
+MPLBACKEND=agg uvx cellxgene-schema validate small_cxg_curated.h5ad
 ```
 
 ```{note}
