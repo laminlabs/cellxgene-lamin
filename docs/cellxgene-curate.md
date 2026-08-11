@@ -38,8 +38,6 @@ lamin init --storage ./test-cellxgene-curate --modules bionty
 import lamindb as ln
 import bionty as bt
 import re
-
-ln.track()
 ```
 
 ## The CELLxGENE schema
