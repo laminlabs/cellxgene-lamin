@@ -18,8 +18,12 @@ classifiers = [
 
 dependencies = [
     "lamindb[zarr]>=1.6.2",
-    "requests"
+    "requests",
+    "click",
 ]
+
+[project.scripts]
+cxg-lamin = "cellxgene_lamin._register_annotate_new_release:main"
 
 [project.urls]
 Home = "https://github.com/laminlabs/cellxgene-lamin"
