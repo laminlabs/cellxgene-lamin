@@ -1,4 +1,10 @@
-"""Integration smoke tests — run against a temporary local lamindb instance."""
+"""Integration smoke tests — run against a fresh local lamindb instance.
+
+A fresh local SQLite instance is used so the tests are fully isolated and
+don't pollute any shared instance. The module is imported inside each test
+function (not at module level) so Django is fully initialized by
+ln.setup.init before lamindb models are loaded.
+"""
 
 import shutil
 import sys
@@ -11,35 +17,17 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import cellxgene_lamin._register_annotate_new_release as _mod
-
 LTS_NEW = "2025-11-08"
 LTS_PREVIOUS = "2025-01-30"
+_TESTDB = "./testdb-integration"
 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_lamindb():
-    ln.setup.init(storage="./testdb", modules="bionty")
+    ln.setup.init(storage=_TESTDB, modules="bionty")
     yield
-    shutil.rmtree("./testdb")
-    ln.setup.delete("testdb", force=True)
-
-
-@pytest.fixture(autouse=True)
-def _bypass_flow_wrapper(monkeypatch):
-    # @ln.flow wraps functions with transform tracking that requires the transform
-    # UID to exist in the connected database. A fresh local DB won't have it, so
-    # we unwrap the decorator by following __wrapped__ — the same pattern used in
-    # laminlabs/laminagent tests/unit/test_main.py.
-    # NOTE: tests call functions via _mod.ingest_lts / _mod.ingest_pre_release
-    # so that monkeypatch.setattr on the module takes effect (a from-import
-    # creates a local copy that patching the module wouldn't affect).
-    for fn_name in ("ingest_lts", "ingest_pre_release"):
-        fn = getattr(_mod, fn_name)
-        unwrapped = fn
-        while hasattr(unwrapped, "__wrapped__"):
-            unwrapped = unwrapped.__wrapped__
-        monkeypatch.setattr(_mod, fn_name, unwrapped)
+    shutil.rmtree(_TESTDB, ignore_errors=True)
+    ln.setup.delete("testdb-integration", force=True)
 
 
 # ---------------------------------------------------------------------------
@@ -49,6 +37,8 @@ def _bypass_flow_wrapper(monkeypatch):
 
 def test_smoke_ingest_lts():
     """Smoke: registers the first 2 h5ad files from the LTS S3 path."""
+    import cellxgene_lamin._register_annotate_new_release as _mod
+
     _mod.ingest_lts(new=LTS_NEW, previous=LTS_PREVIOUS, smoke=True)
 
     lts_artifacts = ln.Artifact.filter(version_tag=LTS_NEW)
@@ -64,6 +54,8 @@ def test_smoke_ingest_lts():
 
 def test_smoke_ingest_pre_release():
     """Smoke: LTS datasets are skipped; up to 2 non-LTS datasets are registered."""
+    import cellxgene_lamin._register_annotate_new_release as _mod
+
     lts_dataset_ids = {
         af.key.split("/")[-1].replace(".h5ad", "")
         for af in ln.Artifact.filter(version_tag=LTS_NEW)
@@ -92,6 +84,7 @@ def test_smoke_ingest_pre_release():
 
 def test_annotation_links_tissue_and_cell_type_labels():
     """Annotation: after curating a pre-release artifact, tissue and cell_type labels are linked."""
+    import cellxgene_lamin._register_annotate_new_release as _mod
     from cellxgene_lamin.dev._cxg_rest_api import get_datasets_from_cxg
 
     pre_release_label = ln.ULabel.filter(name="pre-release").one_or_none()
