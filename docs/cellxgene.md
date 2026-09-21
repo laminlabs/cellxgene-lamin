@@ -290,7 +290,7 @@ for batch in dataloader:
 dataset.close()
 ```
 
-For more background, see {doc}`docs:scrna-mappedcollection`.
+For more background, see {doc}`docs:scrna-dataloading`.
 
 ### On a concatenated array
 
