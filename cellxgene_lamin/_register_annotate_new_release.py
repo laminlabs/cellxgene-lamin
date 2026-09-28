@@ -345,6 +345,27 @@ def ingest_lts(
     new_afs = ln.Artifact.filter(key__contains=new)
     logger.info(f"registered {len(registered_ids)} artifacts for census version {new}")
 
+    # strip pre-release label from any artifacts now promoted to LTS
+    pre_release_label = ln.ULabel.filter(name="pre-release").one_or_none()
+    if pre_release_label is not None:
+        lts_dataset_ids = {
+            key.rsplit("/", 1)[-1].removesuffix(".h5ad")
+            for key in ln.Artifact.filter(version_tag=new).values_list("key", flat=True)
+        }
+        count = 0
+        for dataset_id in lts_dataset_ids:
+            af = ln.Artifact.filter(
+                ulabels=pre_release_label,
+                key__endswith=f"{dataset_id}.h5ad",
+            ).one_or_none()
+            if af is not None:
+                af.ulabels.remove(pre_release_label)
+                count += 1
+        if count:
+            logger.info(
+                f"stripped pre-release label from {count} artifacts now in LTS {new}"
+            )
+
     if is_full_run:
         # 2. Register collections
         logger.info("registering top-level cellxgene-census collection")
