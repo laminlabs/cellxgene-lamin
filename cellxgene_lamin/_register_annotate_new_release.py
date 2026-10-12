@@ -22,8 +22,21 @@ ln.settings.sync_git_repo = "https://github.com/laminlabs/cellxgene-lamin"
 # ---------------------------------------------------------------------------
 
 
+_MISSING_MARKERS = ("NoSuchKey", "404", "NoSuchBucket", "does not exist", "Not Found")
+
+
+def _is_missing_error(e: Exception) -> bool:
+    """Return True only if the error confirms the file is gone from storage."""
+    msg = str(e)
+    return any(marker in msg for marker in _MISSING_MARKERS)
+
+
 def cleanup_broken_pre_release_artifacts(pre_release_label: Any) -> None:
-    """Delete any existing pre-release artifacts that are no longer accessible."""
+    """Delete pre-release artifacts only when confirmed missing from storage.
+
+    Transient errors (timeouts, permission errors) are logged as warnings
+    and do not trigger deletion.
+    """
     existing = ln.Artifact.filter(ulabels=pre_release_label)
     logger.info(
         f"checking {existing.count()} existing pre-release artifacts for breakage"
@@ -32,8 +45,11 @@ def cleanup_broken_pre_release_artifacts(pre_release_label: Any) -> None:
         try:
             af.open()
         except Exception as e:
-            logger.warning(f"broken, deleting | key={af.key} | {e}")
-            af.delete(permanent=True)
+            if _is_missing_error(e):
+                logger.warning(f"confirmed missing, deleting | key={af.key} | {e}")
+                af.delete(permanent=True)
+            else:
+                logger.warning(f"transient error, skipping | key={af.key} | {e}")
 
 
 def register_pre_release_artifacts(
@@ -490,10 +506,21 @@ def ingest_pre_release(
             pre_release_label=pre_release_label,
         )
 
-    # 4. Annotate
+    # 4. Annotate — include any pre-release artifacts that were previously
+    # registered but not annotated (e.g. a prior run stopped mid-way)
+    unannotated_ids = {
+        af.key.rsplit("/", 1)[-1].removesuffix(".h5ad")
+        for af in ln.Artifact.filter(ulabels=pre_release_label)
+        if af.cell_types.count() == 0 and af.tissues.count() == 0
+    }
+    ids_to_annotate = registered_ids | unannotated_ids
+    if unannotated_ids:
+        logger.info(
+            f"found {len(unannotated_ids)} pre-release artifacts missing annotation — will annotate now"
+        )
     _annotate_artifacts(
         cxg_datasets,
-        registered_ids,
+        ids_to_annotate,
         new_census_version=new,
         pre_release_label=pre_release_label,
     )
