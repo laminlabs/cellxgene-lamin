@@ -22,21 +22,30 @@ ln.settings.sync_git_repo = "https://github.com/laminlabs/cellxgene-lamin"
 # ---------------------------------------------------------------------------
 
 
-_MISSING_MARKERS = ("NoSuchKey", "404", "NoSuchBucket", "does not exist", "Not Found")
-
-
-def _is_missing_error(e: Exception) -> bool:
-    """Return True only if the error confirms the file is gone from storage."""
-    msg = str(e)
-    return any(marker in msg for marker in _MISSING_MARKERS)
-
-
 def cleanup_broken_pre_release_artifacts(pre_release_label: Any) -> None:
     """Delete pre-release artifacts only when confirmed missing from storage.
 
-    Transient errors (timeouts, permission errors) are logged as warnings
-    and do not trigger deletion.
+    Uses FileNotFoundError and botocore ClientError with NoSuchKey/NoSuchBucket
+    codes to confirm the file is gone. Transient errors (timeouts, permission
+    errors) are logged as warnings and do not trigger deletion.
     """
+    try:
+        from botocore.exceptions import ClientError as BotocoreClientError
+
+        _missing_codes = {"NoSuchKey", "NoSuchBucket", "404"}
+
+        def _is_missing(e: Exception) -> bool:
+            if isinstance(e, FileNotFoundError):
+                return True
+            if isinstance(e, BotocoreClientError):
+                return e.response["Error"]["Code"] in _missing_codes
+            return False
+
+    except ImportError:
+        # botocore not available — fall back to FileNotFoundError only
+        def _is_missing(e: Exception) -> bool:  # type: ignore[misc]
+            return isinstance(e, FileNotFoundError)
+
     existing = ln.Artifact.filter(ulabels=pre_release_label)
     logger.info(
         f"checking {existing.count()} existing pre-release artifacts for breakage"
@@ -45,7 +54,7 @@ def cleanup_broken_pre_release_artifacts(pre_release_label: Any) -> None:
         try:
             af.open()
         except Exception as e:
-            if _is_missing_error(e):
+            if _is_missing(e):
                 logger.warning(f"confirmed missing, deleting | key={af.key} | {e}")
                 af.delete(permanent=True)
             else:
@@ -125,6 +134,14 @@ def register_pre_release_collections(
         c.reference: c for c in ln.Collection.filter(ulabels=pre_release_label)
     }
 
+    # build a lookup of all existing pre-release artifacts by dataset_id
+    all_pre_release_artifacts: dict[str, Any] = {
+        af.key.rsplit("/", 1)[-1].removesuffix(".h5ad"): af
+        for af in ln.Artifact.filter(ulabels=pre_release_label)
+    }
+    # merge with newly registered ones (newly registered take precedence)
+    all_pre_release_artifacts.update(registered_artifacts)
+
     ln.settings.creation.search_names = False
     for collection_meta in cxg_collections:
         if collection_meta["collection_id"] in lts_collection_ids:
@@ -134,9 +151,9 @@ def register_pre_release_collections(
             continue
 
         member_artifacts = [
-            registered_artifacts[d["dataset_id"]]
+            all_pre_release_artifacts[d["dataset_id"]]
             for d in collection_meta["datasets"]
-            if d["dataset_id"] in registered_artifacts
+            if d["dataset_id"] in all_pre_release_artifacts
         ]
         if not member_artifacts:
             continue
