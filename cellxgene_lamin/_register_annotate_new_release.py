@@ -500,6 +500,37 @@ def ingest_pre_release(
 
 
 # ---------------------------------------------------------------------------
+# LaminHub automation entry point
+# ---------------------------------------------------------------------------
+
+
+@ln.flow()
+def lamin_executable_ingest_pre_release(
+    new: str = "2025-11-08",
+    n_datasets: int = -1,
+) -> None:
+    """Weekly pre-release ingestion job — safe to re-run (idempotent).
+
+    Registers datasets from the latest CellxGENE Census build that are not yet
+    part of the LTS release identified by `new`. Annotates each new artifact
+    with ontology-backed labels. Cleans up broken pre-release artifacts before
+    registering new ones.
+
+    Args:
+        new: Current LTS census version date (e.g. '2025-11-08'). Update this
+            when a new LTS is released.
+        n_datasets: Max datasets to register per run. -1 registers all (default
+            for weekly job). Pass a small number (e.g. 5) for a test run.
+
+    Idempotency guarantees:
+        - Already-registered datasets are detected via key lookup and skipped.
+        - Broken pre-release artifacts are deleted before registering new ones.
+        - Running twice produces no duplicates and deletes no healthy artifacts.
+    """
+    ingest_pre_release(new=new, n_datasets=n_datasets)
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
