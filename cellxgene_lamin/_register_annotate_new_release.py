@@ -23,7 +23,29 @@ ln.settings.sync_git_repo = "https://github.com/laminlabs/cellxgene-lamin"
 
 
 def cleanup_broken_pre_release_artifacts(pre_release_label: Any) -> None:
-    """Delete any existing pre-release artifacts that are no longer accessible."""
+    """Delete pre-release artifacts only when confirmed missing from storage.
+
+    Uses FileNotFoundError and botocore ClientError with NoSuchKey/NoSuchBucket
+    codes to confirm the file is gone. Transient errors (timeouts, permission
+    errors) are logged as warnings and do not trigger deletion.
+    """
+    try:
+        from botocore.exceptions import ClientError as BotocoreClientError
+
+        _missing_codes = {"NoSuchKey", "NoSuchBucket", "404"}
+
+        def _is_missing(e: Exception) -> bool:
+            if isinstance(e, FileNotFoundError):
+                return True
+            if isinstance(e, BotocoreClientError):
+                return e.response["Error"]["Code"] in _missing_codes
+            return False
+
+    except ImportError:
+        # botocore not available — fall back to FileNotFoundError only
+        def _is_missing(e: Exception) -> bool:  # type: ignore[misc]
+            return isinstance(e, FileNotFoundError)
+
     existing = ln.Artifact.filter(ulabels=pre_release_label)
     logger.info(
         f"checking {existing.count()} existing pre-release artifacts for breakage"
@@ -32,15 +54,18 @@ def cleanup_broken_pre_release_artifacts(pre_release_label: Any) -> None:
         try:
             af.open()
         except Exception as e:
-            logger.warning(f"broken, deleting | key={af.key} | {e}")
-            af.delete(permanent=True)
+            if _is_missing(e):
+                logger.warning(f"confirmed missing, deleting | key={af.key} | {e}")
+                af.delete(permanent=True)
+            else:
+                logger.warning(f"transient error, skipping | key={af.key} | {e}")
 
 
 def register_pre_release_artifacts(
     cxg_lookup: dict[str, dict[str, Any]],
     pre_release_label: Any,
     cxc: Any,
-    smoke: bool = False,
+    n_datasets: int = 5,
 ) -> tuple[set[str], dict[str, Any]]:
     """Register datasets from the latest census not already in LaminDB."""
     registered_ids: set[str] = set()
@@ -77,8 +102,8 @@ def register_pre_release_artifacts(
     logger.info(f"{len(cxg_lookup_filtered)} datasets to register")
 
     items = list(cxg_lookup_filtered.items())
-    if smoke:
-        items = items[:2]
+    if n_datasets >= 0:
+        items = items[:n_datasets]
 
     for dataset_id, ds in items:
         uri = census_uri_map[dataset_id]
@@ -109,6 +134,14 @@ def register_pre_release_collections(
         c.reference: c for c in ln.Collection.filter(ulabels=pre_release_label)
     }
 
+    # build a lookup of all existing pre-release artifacts by dataset_id
+    all_pre_release_artifacts: dict[str, Any] = {
+        af.key.rsplit("/", 1)[-1].removesuffix(".h5ad"): af
+        for af in ln.Artifact.filter(ulabels=pre_release_label)
+    }
+    # merge with newly registered ones (newly registered take precedence)
+    all_pre_release_artifacts.update(registered_artifacts)
+
     ln.settings.creation.search_names = False
     for collection_meta in cxg_collections:
         if collection_meta["collection_id"] in lts_collection_ids:
@@ -118,9 +151,9 @@ def register_pre_release_collections(
             continue
 
         member_artifacts = [
-            registered_artifacts[d["dataset_id"]]
+            all_pre_release_artifacts[d["dataset_id"]]
             for d in collection_meta["datasets"]
-            if d["dataset_id"] in registered_artifacts
+            if d["dataset_id"] in all_pre_release_artifacts
         ]
         if not member_artifacts:
             continue
@@ -274,6 +307,13 @@ def _annotate_artifacts(
                 logger.error(
                     f"unhandled ValidationError for dataset_id={ds['dataset_id']}: {error_msg}"
                 )
+        except Exception as e:
+            # transient errors (network timeouts, socket errors) — log and skip,
+            # the dataset will be retried on the next weekly run via the
+            # unannotated_ids recovery path
+            logger.warning(
+                f"transient error annotating dataset_id={ds['dataset_id']}, will retry next run | {type(e).__name__}: {e}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -284,16 +324,25 @@ def _annotate_artifacts(
 @ln.flow("Rrq1bb328HH4")
 def ingest_lts(
     new: str,
-    previous: str | None = None,
-    smoke: bool = False,
+    previous: str = "",
+    n_datasets: int = 5,
 ) -> None:
-    """Register a full LTS census release into LaminDB."""
-    logger.info(f"ingest-lts | new={new} | previous={previous} | smoke={smoke}")
+    """Register a full LTS census release into LaminDB.
+
+    Args:
+        new: New census version date (e.g. '2025-11-08').
+        previous: Previous census version date, used to revise existing artifacts.
+        n_datasets: Max number of datasets to ingest. Pass -1 to ingest all
+            (including collections and soma store). Defaults to 5.
+    """
+    is_full_run = n_datasets < 0
+    logger.info(
+        f"ingest-lts | new={new} | previous={previous} | n_datasets={n_datasets}"
+    )
     census_s3_path = f"s3://cellxgene-data-public/cell-census/{new}/h5ads"
 
-    if smoke:
+    if not is_full_run:
         ln.examples.cellxgene.save_cellxgene_defaults()
-        logger.info("smoke mode: saved cellxgene defaults")
 
     cxg_datasets: list[dict[str, Any]] = get_datasets_from_cxg()  # type: ignore
     logger.info(f"found {len(cxg_datasets)} datasets from CellxGene")
@@ -304,8 +353,8 @@ def ingest_lts(
     # 1. Register artifacts
     h5ad_paths = list(ln.UPath(census_s3_path).glob("*.h5ad"))
     logger.info(f"found {len(h5ad_paths)} h5ad paths in {census_s3_path}")
-    if smoke:
-        h5ad_paths = h5ad_paths[:2]
+    if not is_full_run:
+        h5ad_paths = h5ad_paths[:n_datasets]
 
     registered_ids: set[str] = set()
     for h5ad_path in h5ad_paths:
@@ -336,7 +385,28 @@ def ingest_lts(
     new_afs = ln.Artifact.filter(key__contains=new)
     logger.info(f"registered {len(registered_ids)} artifacts for census version {new}")
 
-    if not smoke:
+    # strip pre-release label from any artifacts now promoted to LTS
+    pre_release_label = ln.ULabel.filter(name="pre-release").one_or_none()
+    if pre_release_label is not None:
+        lts_dataset_ids = {
+            key.rsplit("/", 1)[-1].removesuffix(".h5ad")
+            for key in ln.Artifact.filter(version_tag=new).values_list("key", flat=True)
+        }
+        count = 0
+        for dataset_id in lts_dataset_ids:
+            af = ln.Artifact.filter(
+                ulabels=pre_release_label,
+                key__endswith=f"{dataset_id}.h5ad",
+            ).one_or_none()
+            if af is not None:
+                af.ulabels.remove(pre_release_label)
+                count += 1
+        if count:
+            logger.info(
+                f"stripped pre-release label from {count} artifacts now in LTS {new}"
+            )
+
+    if is_full_run:
         # 2. Register collections
         logger.info("registering top-level cellxgene-census collection")
         collection = ln.Collection(
@@ -404,24 +474,29 @@ def ingest_lts(
         new_soma_af.save()
         logger.info(f"saved soma artifact: {new_soma_af}")
 
-    # 4. Annotate (skipped in smoke mode)
-    if not smoke:
-        _annotate_artifacts(cxg_datasets, registered_ids, new_census_version=new)
+    # 4. Annotate
+    _annotate_artifacts(cxg_datasets, registered_ids, new_census_version=new)
 
 
 @ln.flow("Rrq1bb328HH4")
 def ingest_pre_release(
     new: str,
-    smoke: bool = False,
+    n_datasets: int = 5,
 ) -> None:
-    """Register datasets from the latest weekly census not yet in LaminDB."""
+    """Register datasets from the latest weekly census not yet in LaminDB.
+
+    Args:
+        new: LTS census version date used to identify already-ingested datasets.
+        n_datasets: Max number of new pre-release datasets to register. Pass -1
+            to register all (including collections). Defaults to 5.
+    """
     import cellxgene_census as cxc
 
-    logger.info(f"ingest-pre-release | new={new} | smoke={smoke}")
+    is_full_run = n_datasets < 0
+    logger.info(f"ingest-pre-release | new={new} | n_datasets={n_datasets}")
 
-    if smoke:
+    if not is_full_run:
         ln.examples.cellxgene.save_cellxgene_defaults()
-        logger.info("smoke mode: saved cellxgene defaults")
 
     cxg_datasets: list[dict[str, Any]] = get_datasets_from_cxg()  # type: ignore
     logger.info(f"found {len(cxg_datasets)} datasets from CellxGene")
@@ -443,26 +518,67 @@ def ingest_pre_release(
         cxg_lookup=cxg_lookup,
         pre_release_label=pre_release_label,
         cxc=cxc,
-        smoke=smoke,
+        n_datasets=n_datasets,
     )
     logger.info(f"registered {len(registered_ids)} pre-release artifacts")
 
-    # 3. Register collections not in LTS
-    if registered_artifacts and not smoke:
+    # 3. Register collections not in LTS (full run only)
+    if registered_artifacts and is_full_run:
         register_pre_release_collections(
             cxg_collections=get_collections_from_cxg(),  # type: ignore[arg-type]
             registered_artifacts=registered_artifacts,
             pre_release_label=pre_release_label,
         )
 
-    # 4. Annotate (skipped in smoke mode)
-    if not smoke:
-        _annotate_artifacts(
-            cxg_datasets,
-            registered_ids,
-            new_census_version=new,
-            pre_release_label=pre_release_label,
+    # 4. Annotate — include any pre-release artifacts that were previously
+    # registered but not annotated (e.g. a prior run stopped mid-way)
+    unannotated_ids = {
+        af.key.rsplit("/", 1)[-1].removesuffix(".h5ad")
+        for af in ln.Artifact.filter(ulabels=pre_release_label)
+        if af.cell_types.count() == 0 and af.tissues.count() == 0
+    }
+    ids_to_annotate = registered_ids | unannotated_ids
+    if unannotated_ids:
+        logger.info(
+            f"found {len(unannotated_ids)} pre-release artifacts missing annotation — will annotate now"
         )
+    _annotate_artifacts(
+        cxg_datasets,
+        ids_to_annotate,
+        new_census_version=new,
+        pre_release_label=pre_release_label,
+    )
+
+
+# ---------------------------------------------------------------------------
+# LaminHub automation entry point
+# ---------------------------------------------------------------------------
+
+
+@ln.flow()
+def lamin_executable_ingest_pre_release(
+    new: str = "2025-11-08",
+    n_datasets: int = -1,
+) -> None:
+    """Weekly pre-release ingestion job — safe to re-run (idempotent).
+
+    Registers datasets from the latest CellxGENE Census build that are not yet
+    part of the LTS release identified by `new`. Annotates each new artifact
+    with ontology-backed labels. Cleans up broken pre-release artifacts before
+    registering new ones.
+
+    Args:
+        new: Current LTS census version date (e.g. '2025-11-08'). Update this
+            when a new LTS is released.
+        n_datasets: Max datasets to register per run. -1 registers all (default
+            for weekly job). Pass a small number (e.g. 5) for a test run.
+
+    Idempotency guarantees:
+        - Already-registered datasets are detected via key lookup and skipped.
+        - Broken pre-release artifacts are deleted before registering new ones.
+        - Running twice produces no duplicates and deletes no healthy artifacts.
+    """
+    ingest_pre_release(new=new, n_datasets=n_datasets)
 
 
 # ---------------------------------------------------------------------------
@@ -477,19 +593,29 @@ def cxg_lamin() -> None:
 
 @cxg_lamin.command("ingest-lts")
 @click.option("--new", required=True, help="New census version")
-@click.option("--previous", default=None, help="Previous census version")
-@click.option("--smoke", is_flag=True, help="Limit to 2 datasets, skip collections")
-def ingest_lts_cmd(new: str, previous: str | None, smoke: bool) -> None:
+@click.option("--previous", default="", help="Previous census version")
+@click.option(
+    "--n-datasets",
+    default=5,
+    show_default=True,
+    help="Max datasets to ingest with annotation; -1 ingests all (including collections and soma store).",
+)
+def ingest_lts_cmd(new: str, previous: str, n_datasets: int) -> None:
     """Register a full LTS census release."""
-    ingest_lts(new=new, previous=previous, smoke=smoke)
+    ingest_lts(new=new, previous=previous, n_datasets=n_datasets)
 
 
 @cxg_lamin.command("ingest-pre-release")
 @click.option("--new", required=True, help="New census version")
-@click.option("--smoke", is_flag=True, help="Limit to 2 datasets, skip collections")
-def ingest_pre_release_cmd(new: str, smoke: bool) -> None:
+@click.option(
+    "--n-datasets",
+    default=5,
+    show_default=True,
+    help="Max datasets to ingest with annotation; -1 ingests all (including collections).",
+)
+def ingest_pre_release_cmd(new: str, n_datasets: int) -> None:
     """Register pre-release datasets from the latest weekly census."""
-    ingest_pre_release(new=new, smoke=smoke)
+    ingest_pre_release(new=new, n_datasets=n_datasets)
 
 
 def main() -> None:
