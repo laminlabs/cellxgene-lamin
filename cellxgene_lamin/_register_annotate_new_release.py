@@ -307,6 +307,13 @@ def _annotate_artifacts(
                 logger.error(
                     f"unhandled ValidationError for dataset_id={ds['dataset_id']}: {error_msg}"
                 )
+        except Exception as e:
+            # transient errors (network timeouts, socket errors) — log and skip,
+            # the dataset will be retried on the next weekly run via the
+            # unannotated_ids recovery path
+            logger.warning(
+                f"transient error annotating dataset_id={ds['dataset_id']}, will retry next run | {type(e).__name__}: {e}"
+            )
 
 
 # ---------------------------------------------------------------------------
