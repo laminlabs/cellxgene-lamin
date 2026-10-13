@@ -2,7 +2,7 @@
 execute_via: python
 ---
 
-# CELLxGENE: scRNA-seq
+# CELLxGENE
 
 [CZ CELLxGENE](https://cellxgene.cziscience.com/) hosts one of the largest standardized collections of scRNA-seq data - LaminDB provides a streamlined interface to query and load it.
 
@@ -290,7 +290,7 @@ for batch in dataloader:
 dataset.close()
 ```
 
-For more background, see {doc}`docs:scrna-mappedcollection`.
+For more background, see {doc}`docs:scrna-dataloading`.
 
 ### On a concatenated array
 
