@@ -14,5 +14,9 @@ This is the complete API reference:
 
 __version__ = "0.3.2"  # denote a pre-release for 0.1.0 with 0.1rc1
 
-from ._register_annotate_new_release import ingest_lts, ingest_pre_release
+from ._register_annotate_new_release import (
+    ingest_lts,
+    ingest_portal_only,
+    ingest_pre_release,
+)
 from .dev import datasets
