@@ -260,7 +260,12 @@ def _annotate_artifacts(
     """Validate and curate registered artifacts.
 
     Args:
-        artifact_lookup: Optional direct mapping of ``dataset_id`` → artifact.
+        cxg_datasets: Dataset metadata records from the CellxGENE portal API.
+        registered_ids: Dataset IDs to annotate.
+        new_census_version: Census version date used to look up LTS artifacts.
+        pre_release_label: ULabel used to look up pre-release artifacts. When
+            omitted, artifacts are matched by census version instead.
+        artifact_lookup: Optional direct mapping of ``dataset_id`` to artifact.
             When provided, it is checked first before falling back to the
             key-based query. Required for portal-only datasets whose key stem
             is the ``dataset_version_id``, not the ``dataset_id``.
