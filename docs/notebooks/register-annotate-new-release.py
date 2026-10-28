@@ -33,7 +33,7 @@ PREVIOUS_CENSUS_VERSION = args.previous
 CENSUS_S3PATH = f"s3://cellxgene-data-public/cell-census/{NEW_CENSUS_VERSION}/h5ads"
 
 
-@ln.flow()
+@ln.flow("Rrq1bb328HH4")
 def main() -> None:
     if args.smoke:
         ln.examples.cellxgene.save_cellxgene_defaults()

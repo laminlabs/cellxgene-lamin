@@ -407,7 +407,7 @@ def _annotate_artifacts(
 # ---------------------------------------------------------------------------
 
 
-@ln.flow()
+@ln.flow("Rrq1bb328HH4")
 def ingest_lts(
     new: str,
     previous: str = "",
@@ -564,7 +564,7 @@ def ingest_lts(
     _annotate_artifacts(cxg_datasets, registered_ids, new_census_version=new)
 
 
-@ln.flow()
+@ln.flow("Rrq1bb328HH4")
 def ingest_pre_release(
     new: str,
     n_datasets: int = 5,
