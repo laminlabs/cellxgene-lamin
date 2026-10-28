@@ -61,6 +61,22 @@ def cleanup_broken_pre_release_artifacts(pre_release_label: Any) -> None:
                 logger.warning(f"transient error, skipping | key={af.key} | {e}")
 
 
+def _build_census_uri_map(cxc: Any) -> dict[str, str]:
+    """Return a mapping of census dataset_id → full S3 h5ad URI."""
+    with cxc.open_soma(census_version="latest") as census:
+        h5ad_base = census.uri.replace("/soma", "/h5ads").rstrip("/")
+        census_df = (
+            census["census_info"]["datasets"]
+            .read()
+            .concat()
+            .to_pandas()[["dataset_id", "dataset_h5ad_path"]]
+        )
+    return {
+        row["dataset_id"]: f"{h5ad_base}/{row['dataset_h5ad_path']}"
+        for _, row in census_df.iterrows()
+    }
+
+
 def register_pre_release_artifacts(
     cxg_lookup: dict[str, dict[str, Any]],
     pre_release_label: Any,
@@ -80,18 +96,7 @@ def register_pre_release_artifacts(
     logger.info(f"found {len(existing_dataset_ids)} already-registered datasets")
 
     # one bulk census read: get all census dataset IDs and their h5ad URIs
-    with cxc.open_soma(census_version="latest") as census:
-        h5ad_base = census.uri.replace("/soma", "/h5ads").rstrip("/")
-        census_df = (
-            census["census_info"]["datasets"]
-            .read()
-            .concat()
-            .to_pandas()[["dataset_id", "dataset_h5ad_path"]]
-        )
-    census_uri_map: dict[str, str] = {
-        row["dataset_id"]: f"{h5ad_base}/{row['dataset_h5ad_path']}"
-        for _, row in census_df.iterrows()
-    }
+    census_uri_map = _build_census_uri_map(cxc)
     logger.info(f"found {len(census_uri_map)} datasets in census")
 
     cxg_lookup_filtered = {
@@ -115,6 +120,72 @@ def register_pre_release_artifacts(
         registered_ids.add(dataset_id)
         registered_artifacts[dataset_id] = artifact
         logger.info(f"registered pre-release | dataset_id={dataset_id}")
+
+    return registered_ids, registered_artifacts
+
+
+def register_portal_only_artifacts(
+    cxg_lookup: dict[str, dict[str, Any]],
+    pre_release_label: Any,
+    portal_only_label: Any,
+    census_uri_map: dict[str, str],
+    n_datasets: int = 5,
+) -> tuple[set[str], dict[str, Any]]:
+    """Register datasets that are on the CellxGENE portal but not in Census.
+
+    These datasets have no stable S3 URI in the Census, so they are registered
+    via their HTTPS download URL from the portal (``assets[].url``). They are
+    tagged with both the ``pre-release`` and ``portal-only`` ULabels.
+
+    Deduplication uses the ``dataset_version_id`` embedded in the download URL
+    (the filename stem), because that is what appears in the artifact key —
+    not the ``dataset_id``.
+    """
+    registered_ids: set[str] = set()
+    registered_artifacts: dict[str, Any] = {}
+
+    existing_version_ids = {
+        key.rsplit("/", 1)[-1].removesuffix(".h5ad")
+        for key in ln.Artifact.filter(ulabels=portal_only_label).values_list(
+            "key", flat=True
+        )
+    }
+    logger.info(
+        f"found {len(existing_version_ids)} already-registered portal-only datasets"
+    )
+
+    candidates: list[tuple[str, str, str, dict[str, Any]]] = []
+    for dataset_id, ds in cxg_lookup.items():
+        if dataset_id in census_uri_map:
+            continue
+        h5ad_url = next(
+            (a["url"] for a in ds.get("assets", []) if a.get("filetype") == "H5AD"),
+            None,
+        )
+        if h5ad_url is None:
+            continue
+        dataset_version_id = h5ad_url.rsplit("/", 1)[-1].removesuffix(".h5ad")
+        if dataset_version_id in existing_version_ids:
+            continue
+        candidates.append((dataset_id, dataset_version_id, h5ad_url, ds))
+
+    logger.info(
+        f"found {len(candidates)} portal-only datasets to register (not in Census, not yet in LaminDB)"
+    )
+
+    if n_datasets >= 0:
+        candidates = candidates[:n_datasets]
+
+    for dataset_id, _version_id, h5ad_url, ds in candidates:
+        artifact = ln.Artifact(h5ad_url, description=ds["title"])
+        artifact.n_observations = ds["cell_count"]
+        artifact.save()
+        artifact.ulabels.add(pre_release_label)
+        artifact.ulabels.add(portal_only_label)
+
+        registered_ids.add(dataset_id)
+        registered_artifacts[dataset_id] = artifact
+        logger.info(f"registered portal-only | dataset_id={dataset_id}")
 
     return registered_ids, registered_artifacts
 
@@ -184,8 +255,21 @@ def _annotate_artifacts(
     registered_ids: set[str],
     new_census_version: str,
     pre_release_label: Any = None,
+    artifact_lookup: dict[str, Any] | None = None,
 ) -> None:
-    """Validate and curate registered artifacts."""
+    """Validate and curate registered artifacts.
+
+    Args:
+        cxg_datasets: Dataset metadata records from the CellxGENE portal API.
+        registered_ids: Dataset IDs to annotate.
+        new_census_version: Census version date used to look up LTS artifacts.
+        pre_release_label: ULabel used to look up pre-release artifacts. When
+            omitted, artifacts are matched by census version instead.
+        artifact_lookup: Optional direct mapping of ``dataset_id`` to artifact.
+            When provided, it is checked first before falling back to the
+            key-based query. Required for portal-only datasets whose key stem
+            is the ``dataset_version_id``, not the ``dataset_id``.
+    """
     logger.important("starting annotation of artifacts")
 
     # bulk query: fetch all organism records needed across all datasets at once
@@ -226,7 +310,9 @@ def _annotate_artifacts(
         if idx % 10 == 0:
             logger.info(f"annotating dataset {idx} of {len(cxg_datasets)}")
 
-        if pre_release_label is not None:
+        if artifact_lookup is not None and ds["dataset_id"] in artifact_lookup:
+            af = artifact_lookup[ds["dataset_id"]]
+        elif pre_release_label is not None:
             af = ln.Artifact.filter(
                 ulabels=pre_release_label,
                 key__endswith=f"{ds['dataset_id']}.h5ad",
@@ -550,6 +636,95 @@ def ingest_pre_release(
     )
 
 
+@ln.flow()
+def ingest_portal_only(
+    new: str,
+    n_datasets: int = 5,
+) -> None:
+    """Register datasets that are on the CellxGENE portal but not in Census.
+
+    Datasets published on the portal but not yet included in the Census
+    (for example spatial datasets or very new uploads) have no stable S3 URI.
+    This function registers them via their HTTPS download URL and tags them
+    with both ``pre-release`` and ``portal-only`` ULabels.
+
+    Args:
+        new: Current LTS census version date (e.g. ``'2025-11-08'``). Used
+            only to identify the Census exclusion list — datasets already in
+            the Census are skipped.
+        n_datasets: Max number of new portal-only datasets to register. Pass
+            ``-1`` to register all. Defaults to 5 for a quick test run.
+    """
+    import cellxgene_census as cxc
+
+    is_full_run = n_datasets < 0
+    logger.info(f"ingest-portal-only | new={new} | n_datasets={n_datasets}")
+
+    if not is_full_run:
+        ln.examples.cellxgene.save_cellxgene_defaults()
+
+    cxg_datasets: list[dict[str, Any]] = get_datasets_from_cxg()  # type: ignore
+    logger.info(f"found {len(cxg_datasets)} datasets from CellxGene portal")
+    cxg_lookup: dict[str, dict[str, Any]] = {
+        ds["dataset_id"]: ds for ds in cxg_datasets
+    }
+
+    pre_release_label = ln.ULabel.filter(name="pre-release").one_or_none()
+    if pre_release_label is None:
+        pre_release_label = ln.ULabel(name="pre-release").save()
+
+    portal_only_label = ln.ULabel.filter(name="portal-only").one_or_none()
+    if portal_only_label is None:
+        portal_only_label = ln.ULabel(name="portal-only").save()
+    logger.info("ULabels ready")
+
+    census_uri_map = _build_census_uri_map(cxc)
+    logger.info(f"Census has {len(census_uri_map)} datasets (will be excluded)")
+
+    registered_ids, registered_artifacts = register_portal_only_artifacts(
+        cxg_lookup=cxg_lookup,
+        pre_release_label=pre_release_label,
+        portal_only_label=portal_only_label,
+        census_uri_map=census_uri_map,
+        n_datasets=n_datasets,
+    )
+    logger.info(f"registered {len(registered_ids)} new portal-only artifacts")
+
+    # The key stem is the dataset_version_id, so rebuild dataset_id → artifact
+    # for any portal-only artifacts that were registered but not annotated.
+    version_id_to_dataset_id: dict[str, str] = {}
+    for dataset_id, ds in cxg_lookup.items():
+        for asset in ds.get("assets", []):
+            if asset.get("filetype") == "H5AD":
+                vid = asset["url"].rsplit("/", 1)[-1].removesuffix(".h5ad")
+                version_id_to_dataset_id[vid] = dataset_id
+                break
+
+    unannotated_artifact_lookup: dict[str, Any] = {}
+    for af in ln.Artifact.filter(ulabels=portal_only_label):
+        if af.cell_types.count() == 0 and af.tissues.count() == 0:
+            vid = af.key.rsplit("/", 1)[-1].removesuffix(".h5ad")
+            did = version_id_to_dataset_id.get(vid)
+            if did:
+                unannotated_artifact_lookup[did] = af
+
+    if unannotated_artifact_lookup:
+        logger.info(
+            f"found {len(unannotated_artifact_lookup)} portal-only artifacts missing annotation — will annotate now"
+        )
+
+    combined_lookup = {**unannotated_artifact_lookup, **registered_artifacts}
+    ids_to_annotate = set(combined_lookup.keys())
+
+    _annotate_artifacts(
+        cxg_datasets,
+        ids_to_annotate,
+        new_census_version=new,
+        pre_release_label=portal_only_label,
+        artifact_lookup=combined_lookup,
+    )
+
+
 # ---------------------------------------------------------------------------
 # LaminHub automation entry point
 # ---------------------------------------------------------------------------
@@ -616,6 +791,19 @@ def ingest_lts_cmd(new: str, previous: str, n_datasets: int) -> None:
 def ingest_pre_release_cmd(new: str, n_datasets: int) -> None:
     """Register pre-release datasets from the latest weekly census."""
     ingest_pre_release(new=new, n_datasets=n_datasets)
+
+
+@cxg_lamin.command("ingest-portal-only")
+@click.option("--new", required=True, help="Current LTS census version date")
+@click.option(
+    "--n-datasets",
+    default=5,
+    show_default=True,
+    help="Max portal-only datasets to ingest; -1 registers all.",
+)
+def ingest_portal_only_cmd(new: str, n_datasets: int) -> None:
+    """Register portal datasets not yet in Census."""
+    ingest_portal_only(new=new, n_datasets=n_datasets)
 
 
 def main() -> None:
